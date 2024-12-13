@@ -520,7 +520,6 @@ def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: li
             break
         elif choice == 'r':
             # Rejected with no feedback
-            Path(output_dir).mkdir(parents=True, exist_ok=True)  # Create output directory here
             logger.info("User rejected the structure. Files not moved. Final report generated.")
             generate_report(analysis_results, output_dir)
             break
