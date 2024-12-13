@@ -9,7 +9,8 @@ import logging
 import argparse
 from pathlib import Path
 from tqdm import tqdm
-import re
+import jsonschema
+from jsonschema import validate
 
 # External dependencies:
 #   google-generativeai (LLM)
@@ -83,17 +84,50 @@ if not api_key:
 
 genai.configure(api_key=api_key)
 
-analysis_response_schema = content.Schema(
-    type=content.Type.OBJECT,
-    properties={
-        "tags": content.Schema(
-            type=content.Type.ARRAY,
-            items=content.Schema(type=content.Type.STRING)
-        ),
-        "summary": content.Schema(type=content.Type.STRING),
+analysis_response_schema = {
+    "type": "object",
+    "properties": {
+        "tags": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "summary": {"type": "string"},
+        "entities": {
+            "type": "object",
+            "properties": {
+                "authors": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "intended_recipients": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "organizations": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "locations": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "dates": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+            },
+            "required": ["authors", "intended_recipients"]
+        },
+        "key_phrases": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "sentiment": {"type": "string"},
+        "document_form": {"type": "string"},
+        "document_purpose": {"type": "string"},
     },
-    required=["tags", "summary"]
-)
+    "required": ["tags", "summary", "entities", "key_phrases", "sentiment", "document_form", "document_purpose"]
+}
 
 analysis_generation_config = {
     "temperature": 0.7,
@@ -254,27 +288,58 @@ class LLMClient:
     
     def analyze_text(self, text: str) -> dict:
         """Analyze a text using the analysis model."""
+        prompt = (
+        "Analyze the following text and extract the specified metadata in JSON format strictly adhering to the given structure. "
+        "Return only the JSON object without any additional text.\n\n"
+        "Structure:\n"
+        "{\n"
+        '  "tags": ["tag1", "tag2", "tag3", etc.],\n'
+        '  "summary": "A brief summary of the document.",\n'
+        '  "entities": {\n'
+        '    "authors": ["Author Name"],\n'
+        '    "intended_recipients": ["Recipient Name"],\n'
+        '    "organizations": ["Organization Name"],\n'
+        '    "locations": ["Location Name"],\n'
+        '    "dates": ["2024-01-01"]\n'
+        '  },\n'
+        '  "key_phrases": ["phrase1", "phrase2"],\n'
+        '  "sentiment": "neutral",\n'
+        '  "document_form": "report",\n'
+        '  "document_purpose": "informative"\n'
+        '}\n\n'
+        "Now, analyze the following text:\n"
+        )
+    
+        full_prompt = prompt + text
+
         chat_session = self.analysis_model.start_chat()
-        response = chat_session.send_message(text)
+        response = chat_session.send_message(full_prompt)
         if response and response.text:
             try:
                 result = json.loads(response.text)
-                return {
-                    'tags': result.get('tags', []),
-                    'summary': result.get('summary', '')
-                }
-            except ValueError:
-                logger.error("Error parsing JSON from LLM analysis.")
-        return {'tags': [], 'summary': 'No summary available.'}
+                # Validate the response against the updated schema
+                validate(instance=result, schema=analysis_response_schema)
+                return result
+            except (ValueError, jsonschema.exceptions.ValidationError) as e:
+                logger.error(f"Error parsing JSON from LLM analysis: {e}")
+        return {
+            'tags': [],
+            'summary': 'No summary available.',
+            'entities': {},
+            'key_phrases': [],
+            'sentiment': 'neutral',
+            'document_form': '',
+            'document_purpose': ''
+        }
 
     def propose_structure(self, analysis_results: list[dict], user_feedback: str) -> dict:
         """Propose a folder structure using the nomenclature model."""
         # Reworked prompt: instruct the model to reason about flat vs hierarchical
         # and consider user feedback. No commentary, just return JSON.
         prompt = (
-            "You have a list of files with tags and summaries. "
+            "You have a list of files with detailed metadata including tags, summary, entities, key phrases, sentiment, document form, and document purpose. "
             "Your job: reorganize the files based on their content and propose a neat and logical folder structure. "
-            "Group files by their thematic similarities. "
+            "Group files by their thematic similarities, key phrases, and as a possible second layer on document form/purpose. "
             "You may use a flat structure or a hierarchical folder structure. If some groups are subsets of others, create nested folders. If not, keep it simpler. "
             "Consider this user feedback to improve your proposal:\n"
             f"{user_feedback}\n\n"
@@ -319,13 +384,34 @@ class FileAnalyzer:
         # Extract text and analyze via LLM
         text = extract_file_content(fpath)
         if not text.strip():
-            analysis = {'tags': [], 'summary': 'No extractable text.'}
+            analysis = {
+                'tags': [],
+                'summary': 'No summary available.',
+                'entities': {
+                    'authors': [],
+                    'intended_recipients': [],
+                    'organizations': [],
+                    'locations': [],
+                    'dates': []
+                },
+                'key_phrases': [],
+                'sentiment': 'neutral',
+                'document_form': '',
+                'document_purpose': ''
+            }
         else:
             analysis = self.llm_client.analyze_text(text)
+
+        # Include the filepath in the analysis result
+        combined_result = {
+            "filepath": fpath,
+            **analysis
+        }
 
         # Save analysis for future use
         save_analysis(file_id, analysis, current_hash)
         return analysis
+       
 
     def process_directory(self, input_dir: str) -> list[dict]:
         """Scan directory, process supported files, return analysis results."""
@@ -383,11 +469,25 @@ def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: li
         logger.info("Proposed structure:")
         logger.info(json.dumps(proposed_structure, indent=2))
 
+        # Aggregate and display key metadata for user awareness
+        all_authors = set(author for item in analysis_results for author in item.get("entities", {}).get("authors", []))
+        all_recipients = set(recipient for item in analysis_results for recipient in item.get("entities", {}).get("intended_recipients", []))
+        all_key_phrases = set(phrase for item in analysis_results for phrase in item.get("key_phrases", []))
+        overall_sentiment = [item.get("sentiment", "neutral") for item in analysis_results]
+        sentiment_counts = {}
+        for sentiment in overall_sentiment:
+            sentiment_counts[sentiment] = sentiment_counts.get(sentiment, 0) + 1
+        
+        logger.info(f"Identified Authors: {', '.join(all_authors) if all_authors else 'None'}")
+        logger.info(f"Identified Intended Recipients: {', '.join(all_recipients) if all_recipients else 'None'}")
+        logger.info(f"Identified Key Phrases: {', '.join(all_key_phrases) if all_key_phrases else 'None'}")
+        logger.info(f"Sentiment Distribution: {sentiment_counts}")
+
         choice = input("Approve (a), Reject (r), or Comment (c)? ").strip().lower()
         if choice == 'a':
             # Approved
             organize_files(proposed_structure, output_dir)
-            generate_report(analysis_results, proposed_structure, output_dir)
+            generate_report(analysis_results, output_dir)
             logger.info("Files organized.")
             break
         elif choice == 'r':
@@ -402,18 +502,23 @@ def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: li
             logger.info("Invalid choice. Please enter 'a', 'r', or 'c'.")
 
 
-def generate_report(analysis_results: list[dict], proposed_structure: dict, output_dir: str):
+def generate_report(analysis_results: list[dict], output_dir: str):
     # Generate a report JSON file of the final analysis.
     report_path = Path(output_dir) / "report.json"
     with report_path.open('w', encoding='utf-8') as rep:
         report_data = {
             "analysis_results": [
                 {
-                    "filepath": item["filepath"],
-                    "analysis": item["analysis"],
-                    "file_id": get_file_id(item["filepath"])
+                    "filepath": item.get("filepath", ""),
+                    "tags": item.get("tags", []),
+                    "summary": item.get("summary", ""),
+                    "entities": item.get("entities", {}),
+                    "key_phrases": item.get("key_phrases", []),
+                    "sentiment": item.get("sentiment", ""),
+                    "document_form": item.get("document_form", ""),
+                    "document_purpose": item.get("document_purpose", "")
                 } for item in analysis_results
-            ],
+            ]
         }
         json.dump(report_data, rep, indent=2)
     logger.info(f"Report generated: {report_path}")
@@ -455,6 +560,8 @@ def main():
 
     # Prompt user to approve structure, reject, or provide feedback for refinement
     gather_user_feedback_and_improve(llm_client, analysis_results, output_dir)
+
+
 
 
 if __name__ == "__main__":
