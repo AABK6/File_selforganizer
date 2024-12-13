@@ -140,7 +140,7 @@ analysis_generation_config = {
 }
 
 nomenclature_generation_config = {
-    "temperature": 0.7,
+    "temperature": 0.8,
     "top_p": 0.9,
     "max_output_tokens": nomenclature_max_tokens,
     "response_mime_type": "application/json",
@@ -597,7 +597,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
