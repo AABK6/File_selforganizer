@@ -18,6 +18,13 @@ from jsonschema import validate
 #   PyPDF2
 
 try:
+    from google import genai
+    from google.genai import types
+except ImportError:
+    print("google-generativeai not found. Please install it.")
+    sys.exit(1)
+
+try:
     import docx
 except ImportError:
     print("docx library not found. Please install python-docx.")
@@ -26,12 +33,6 @@ try:
     import PyPDF2
 except ImportError:
     print("PyPDF2 library not found. Please install PyPDF2.")
-    sys.exit(1)
-try:
-    import google.generativeai as genai
-    from google.ai.generativelanguage_v1beta.types import content
-except ImportError:
-    print("google-generativeai not found. Please install it.")
     sys.exit(1)
 
 
@@ -63,15 +64,15 @@ def load_config(config_path="config.json"):
         logger.info("Config file not found. Using defaults.")
         return {
             "supported_extensions": ['.txt', '.md', '.doc', '.docx', '.pdf'],
-            "analysis_max_tokens": 8000,
-            "nomenclature_max_tokens": 4000,
+            "analysis_max_tokens": 8192,
+            "nomenclature_max_tokens": 8192,
         }
 
 
 config = load_config()
 supported_ext = tuple(config.get("supported_extensions", ['.txt', '.md', '.doc', '.docx', '.pdf']))
-analysis_max_tokens = config.get("analysis_max_tokens", 8000)
-nomenclature_max_tokens = config.get("nomenclature_max_tokens", 4000)
+analysis_max_tokens = config.get("analysis_max_tokens", 8192)
+nomenclature_max_tokens = config.get("nomenclature_max_tokens", 8192)
 
 ########################################################################
 # LLM Initialization
@@ -82,7 +83,8 @@ if not api_key:
     logger.error("GEMINI_API_KEY not set. Exiting.")
     sys.exit(1)
 
-genai.configure(api_key=api_key)
+# Only run this block for Google AI API
+client = genai.Client(api_key=api_key)
 
 analysis_response_schema = {
     "type": "object",
@@ -163,19 +165,15 @@ def save_storage(data: dict) -> None:
     with open(STORAGE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
-def get_file_id(filepath: str) -> str:
-    """Generate a unique file ID based on the filepath."""
-    return str(uuid.uuid5(uuid.NAMESPACE_URL, filepath))
-
-def get_cached_analysis(file_id: str) -> dict:
+def get_cached_analysis(file_hash: str) -> dict:
     """Get cached analysis for a file if it exists."""
     storage = load_storage()
-    return storage["files"].get(file_id)
+    return storage["files"].get(file_hash)
 
-def save_analysis(file_id: str, analysis: dict, file_hash: str) -> None:
+def save_analysis(file_hash: str, analysis: dict) -> None:
     """Save analysis to cache."""
     storage = load_storage()
-    storage["files"][file_id] = {"analysis": analysis, "hash": file_hash}
+    storage["files"][file_hash] = {"analysis": analysis}
     save_storage(storage)
 
 def save_nomenclature_comment(proposed_structure: dict, comment: str):
@@ -277,51 +275,63 @@ def get_file_hash(filepath: str) -> str:
 class LLMClient:
     """A simple client for interacting with the LLM models."""
     def __init__(self, analysis_config, nomenclature_config):
-        self.analysis_model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash-8b",
-            generation_config=analysis_config
-        )
-        self.nomenclature_model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash-8b",
-            generation_config=nomenclature_config
-        )
+        self.analysis_config = analysis_config
+        self.nomenclature_config = nomenclature_config
     
     def analyze_text(self, text: str) -> dict:
         """Analyze a text using the analysis model."""
         prompt = (
-        "Analyze the following text and extract the specified metadata in JSON format strictly adhering to the given structure. "
-        "Return only valid JSON. Do not include any explanation, commentary, or other text outside the JSON object.\n\n"
-        "Structure:\n"
-        "{\n"
-        '  "tags": ["tag1", "tag2", "tag3", etc.],\n'
-        '  "summary": "A brief summary of the document.",\n'
-        '  "entities": {\n'
-        '    "authors": ["Author Name"],\n'
-        '    "intended_recipients": ["Recipient Name"],\n'
-        '    "organizations": ["Organization Name"],\n'
-        '    "locations": ["Location Name"],\n'
-        '    "dates": ["2024-01-01"]\n'
-        '  },\n'
-        '  "key_phrases": ["phrase1", "phrase2"],\n'
-        '  "sentiment": "neutral",\n'
-        '  "document_form": "report",\n'
-        '  "document_purpose": "informative"\n'
-        '}\n\n'
-        "Now, analyze the following text:\n"
+            "You are an expert document analyzer. Your job is to analyze the following text and extract specified information and return it in strict JSON format. "
+            "The output must be valid JSON with no commentary or explanations. No extra text should surround the JSON object. "
+            "Ensure that all strings are properly terminated with double quotes.\n\n"
+            "The JSON structure is as follows:\n"
+            "{\n"
+            '  "tags": ["tag1", "tag2", "tag3", ... ],\n'
+            '  "summary": "A brief summary of the document.",\n'
+            '  "entities": {\n'
+            '    "authors": ["Author Name"],\n'
+            '    "intended_recipients": ["Recipient Name"],\n'
+            '    "organizations": ["Organization Name"],\n'
+            '    "locations": ["Location Name"],\n'
+            '    "dates": ["2024-01-01"]\n'
+            '  },\n'
+            '  "key_phrases": ["phrase1", "phrase2", ... ],\n'
+            '  "sentiment": "neutral",\n'
+            '  "document_form": "report",\n'
+            '  "document_purpose": "informative"\n'
+            '}\n\n'
+            "Now, analyze the following text:\n"
         )
     
         full_prompt = prompt + text
+        response = client.models.generate_content(
+            model='gemini-1.5-flash-8b',
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                **self.analysis_config
+            )
+        )
 
-        chat_session = self.analysis_model.start_chat()
-        response = chat_session.send_message(full_prompt)
         if response and response.text:
             try:
-                result = json.loads(response.text)
-                # Validate the response against the updated schema
+                # Attempt JSON normalization
+                json_string = response.text.strip()
+                json_string = json_string.replace('\\', '\\\\')  # Escape backslashes
+                json_string = json_string.replace('\n', '')  # Remove newlines
+                json_string = json_string.replace('\'', '"')  # Replace single quotes
+
+                # Attempt JSON parsing
+                result = json.loads(json_string)
+                 # Validate the response against the updated schema
                 validate(instance=result, schema=analysis_response_schema)
+
                 return result
-            except (ValueError, jsonschema.exceptions.ValidationError) as e:
-                logger.error(f"Error parsing JSON from LLM analysis: {e}")
+            except json.JSONDecodeError as e:
+                logger.error(f"JSONDecodeError during LLM analysis: {e}")
+            except jsonschema.exceptions.ValidationError as e:
+                logger.error(f"ValidationError during LLM analysis: {e}")
+            except Exception as e:
+                logger.error(f"General exception during LLM analysis: {e}")
         return {
             'tags': [],
             'summary': 'No summary available.',
@@ -349,8 +359,13 @@ class LLMClient:
             "or nested objects for subfolders. No extra text."
         )
 
-        chat_session = self.nomenclature_model.start_chat()
-        response = chat_session.send_message(prompt)
+        response = client.models.generate_content(
+          model='gemini-1.5-flash-8b',
+           contents=prompt,
+          config=types.GenerateContentConfig(
+                **self.nomenclature_config
+            )
+        )
         if response and response.text:
             try:
                 return json.loads(response.text)
@@ -373,12 +388,11 @@ class FileAnalyzer:
 
     def process_file(self, fpath: str) -> dict:
         """Process a single file: extract, analyze, cache result."""
-        file_id = get_file_id(fpath)
-        cached_data = None if self.force_reanalyze else get_cached_analysis(file_id)
         current_hash = get_file_hash(fpath)
+        cached_data = None if self.force_reanalyze else get_cached_analysis(current_hash)
         
         # Use cached result if file unchanged and reanalyze not forced
-        if cached_data and cached_data.get("hash") == current_hash:
+        if cached_data:
             return cached_data.get("analysis", {})
 
         # Extract text and analyze via LLM
@@ -409,8 +423,8 @@ class FileAnalyzer:
         }
 
         # Save analysis for future use
-        save_analysis(file_id, analysis, current_hash)
-        return analysis
+        save_analysis(current_hash, analysis)
+        return combined_result
        
 
     def process_directory(self, input_dir: str) -> list[dict]:
@@ -461,13 +475,27 @@ def organize_files(chosen_structure: dict, output_dir: str) -> None:
 # User Interaction Flow
 ########################################################################
 
+def format_structure_output(structure: dict, indent=0) -> str:
+    """Formats the proposed structure for user presentation."""
+    output = ""
+    for key, value in structure.items():
+        output += "  " * indent + f"- {key}:\n"
+        if isinstance(value, dict):
+            output += format_structure_output(value, indent + 1)
+        elif isinstance(value, list):
+            for item in value:
+                 output += "  " * (indent+1) + f"  - {item}\n"
+    return output
+
 def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: list[dict], output_dir: str):
     """Loop until user approves structure or quits. On 'c', get user feedback and re-propose."""
     user_feedback = ""
     while True:
         proposed_structure = llm_client.propose_structure(analysis_results, user_feedback)
         logger.info("Proposed structure:")
-        logger.info(json.dumps(proposed_structure, indent=2))
+        formatted_structure = format_structure_output(proposed_structure)
+        print("\nProposed structure:\n")
+        print(formatted_structure)
 
         # Aggregate and display key metadata for user awareness
         all_authors = set(author for item in analysis_results for author in item.get("entities", {}).get("authors", []))
@@ -492,8 +520,10 @@ def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: li
             break
         elif choice == 'r':
             # Rejected with no feedback
-            logger.info("User rejected the structure. Trying again without additional feedback.")
-            user_feedback = ""
+            Path(output_dir).mkdir(parents=True, exist_ok=True)  # Create output directory here
+            logger.info("User rejected the structure. Files not moved. Final report generated.")
+            generate_report(analysis_results, output_dir)
+            break
         elif choice == 'c':
             # User wants to refine structure
             user_feedback = input("Enter your feedback to improve the structure: ")
@@ -547,6 +577,8 @@ def main():
     if not output_dir:
         output_dir = os.path.join(os.path.dirname(input_dir), 'organized_folder')
     logger.info(f"Output path: {output_dir}")
+
+    Path(output_dir).mkdir(parents=True, exist_ok=True) # Ensure output directory is made
 
     # Initialize LLM client and file analyzer
     llm_client = LLMClient(analysis_generation_config, nomenclature_generation_config)
