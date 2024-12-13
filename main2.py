@@ -290,7 +290,7 @@ class LLMClient:
         """Analyze a text using the analysis model."""
         prompt = (
         "Analyze the following text and extract the specified metadata in JSON format strictly adhering to the given structure. "
-        "Return only the JSON object without any additional text.\n\n"
+        "Return only valid JSON. Do not include any explanation, commentary, or other text outside the JSON object.\n\n"
         "Structure:\n"
         "{\n"
         '  "tags": ["tag1", "tag2", "tag3", etc.],\n'
@@ -510,13 +510,13 @@ def generate_report(analysis_results: list[dict], output_dir: str):
             "analysis_results": [
                 {
                     "filepath": item.get("filepath", ""),
-                    "tags": item.get("tags", []),
-                    "summary": item.get("summary", ""),
-                    "entities": item.get("entities", {}),
-                    "key_phrases": item.get("key_phrases", []),
-                    "sentiment": item.get("sentiment", ""),
-                    "document_form": item.get("document_form", ""),
-                    "document_purpose": item.get("document_purpose", "")
+                    "tags": item["analysis"].get("tags", []),
+                    "summary": item["analysis"].get("summary", ""),
+                    "entities": item["analysis"].get("entities", {}),
+                    "key_phrases": item["analysis"].get("key_phrases", []),
+                    "sentiment": item["analysis"].get("sentiment", ""),
+                    "document_form": item["analysis"].get("document_form", ""),
+                    "document_purpose": item["analysis"].get("document_purpose", "")
                 } for item in analysis_results
             ]
         }
