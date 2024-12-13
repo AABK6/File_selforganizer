@@ -1,5 +1,5 @@
 {
     "supported_extensions": [".txt", ".md", ".doc", ".docx", ".pdf"],
-    "analysis_max_tokens": 8000,
-    "nomenclature_max_tokens": 4000
+    "analysis_max_tokens": 12000,
+    "nomenclature_max_tokens": 20000
 }

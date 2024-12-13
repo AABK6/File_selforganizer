@@ -386,8 +386,6 @@ def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: li
         choice = input("Approve (a), Reject (r), or Comment (c)? ").strip().lower()
         if choice == 'a':
             # Approved
-            user_comment = input("Optional comment about the final structure (press Enter to skip): ")
-            save_nomenclature_comment(proposed_structure, user_comment)
             organize_files(proposed_structure, output_dir)
             generate_report(analysis_results, proposed_structure, output_dir)
             logger.info("Files organized.")
@@ -405,7 +403,7 @@ def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: li
 
 
 def generate_report(analysis_results: list[dict], proposed_structure: dict, output_dir: str):
-    """Generate a report JSON file of the final analysis and structure."""
+    # Generate a report JSON file of the final analysis.
     report_path = Path(output_dir) / "report.json"
     with report_path.open('w', encoding='utf-8') as rep:
         report_data = {
@@ -416,9 +414,7 @@ def generate_report(analysis_results: list[dict], proposed_structure: dict, outp
                     "file_id": get_file_id(item["filepath"])
                 } for item in analysis_results
             ],
-            "final_structure": proposed_structure
         }
-        report_data.update({"nomenclature_comment": get_nomenclature_comment()})
         json.dump(report_data, rep, indent=2)
     logger.info(f"Report generated: {report_path}")
 
