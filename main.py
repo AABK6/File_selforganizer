@@ -11,6 +11,7 @@ from pathlib import Path
 from tqdm import tqdm
 import re
 
+
 try:
     import docx
 except ImportError:
@@ -23,7 +24,7 @@ except ImportError:
     sys.exit(1)
 try:
     import google.generativeai as genai
-    from google.ai.generativelanguage_v1beta.types import content
+    from google.ai.generativelanguage_v2beta.types import content
 except ImportError:
     print("google-generativeai not found. Please install it.")
     sys.exit(1)
