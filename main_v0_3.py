@@ -11,6 +11,11 @@ from pathlib import Path
 from tqdm import tqdm
 import re
 
+# External dependencies:
+#   google-generativeai (LLM)
+#   docx
+#   PyPDF2
+
 try:
     import docx
 except ImportError:
@@ -29,6 +34,10 @@ except ImportError:
     sys.exit(1)
 
 
+########################################################################
+# Logging
+########################################################################
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -39,6 +48,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+########################################################################
+# Configuration Loading
+########################################################################
 
 def load_config(config_path="config.json"):
     try:
@@ -57,6 +70,10 @@ supported_ext = tuple(config.get("supported_extensions", ['.txt', '.md', '.doc',
 analysis_max_tokens = config.get("analysis_max_tokens", 8000)
 nomenclature_max_tokens = config.get("nomenclature_max_tokens", 4000)
 
+
+########################################################################
+# LLM Setup
+########################################################################
 
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
@@ -103,39 +120,9 @@ nomenclature_model = genai.GenerativeModel(
 )
 
 
-STORAGE_FILE = "analysis_cache.json"
-
-def load_storage() -> dict:
-    if Path(STORAGE_FILE).exists():
-        with open(STORAGE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"files": {}, "nomenclature_comments": {}}
-
-def save_storage(data: dict) -> None:
-    with open(STORAGE_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-
-def get_file_id(filepath: str) -> str:
-    return str(uuid.uuid5(uuid.NAMESPACE_URL, filepath))
-
-def get_cached_analysis(file_id: str) -> dict:
-    storage = load_storage()
-    return storage["files"].get(file_id)
-
-def save_analysis(file_id: str, analysis: dict, file_hash: str) -> None:
-    storage = load_storage()
-    storage["files"][file_id] = {"analysis": analysis, "hash": file_hash}
-    save_storage(storage)
-
-def save_nomenclature_comment(proposed_structure: dict, comment: str):
-    storage = load_storage()
-    storage["nomenclature_comments"] = {"structure": proposed_structure, "comment": comment}
-    save_storage(storage)
-
-def get_nomenclature_comment():
-    storage = load_storage()
-    return storage.get("nomenclature_comments", {})
-
+########################################################################
+# Text Extraction
+########################################################################
 
 def extract_text_from_txt(filepath: str) -> str:
     try:
@@ -192,6 +179,10 @@ def extract_file_content(filepath: str) -> str:
     return ""
 
 
+########################################################################
+# Hashing
+########################################################################
+
 def get_file_hash(filepath: str) -> str:
     hasher = hashlib.sha256()
     try:
@@ -203,6 +194,48 @@ def get_file_hash(filepath: str) -> str:
         return ""
     return hasher.hexdigest()
 
+
+########################################################################
+# Caching
+########################################################################
+
+STORAGE_FILE = "analysis_cache.json"
+
+def load_storage() -> dict:
+    if Path(STORAGE_FILE).exists():
+        with open(STORAGE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"files": {}, "nomenclature_comments": {}}
+
+def save_storage(data: dict) -> None:
+    with open(STORAGE_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+def get_file_id(filepath: str) -> str:
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, filepath))
+
+def get_cached_analysis(file_id: str) -> dict:
+    storage = load_storage()
+    return storage["files"].get(file_id)
+
+def save_analysis(file_id: str, analysis: dict, file_hash: str) -> None:
+    storage = load_storage()
+    storage["files"][file_id] = {"analysis": analysis, "hash": file_hash}
+    save_storage(storage)
+
+def save_nomenclature_comment(proposed_structure: dict, comment: str):
+    storage = load_storage()
+    storage["nomenclature_comments"] = {"structure": proposed_structure, "comment": comment}
+    save_storage(storage)
+
+def get_nomenclature_comment():
+    storage = load_storage()
+    return storage.get("nomenclature_comments", {})
+
+
+########################################################################
+# Analysis
+########################################################################
 
 def analyze_file_content(filepath: str, force_analyze: bool = False) -> dict:
     file_id = get_file_id(filepath)
@@ -239,20 +272,21 @@ def analyze_file_content(filepath: str, force_analyze: bool = False) -> dict:
     return analysis
 
 
-def propose_nomenclature_with_llm(analysis_results: list[dict], user_feedback: str = "") -> dict:
+########################################################################
+# Nomenclature Proposal
+########################################################################
+
+def propose_nomenclature_with_llm(analysis_results: list[dict]) -> dict:
     prompt = (
-        "You have a set of files, each with tags and summaries. "
-        "Your goal: propose the best possible folder structure. "
-        "Decide whether a flat structure or a hierarchical one is better. "
-        "Group them logically by theme. If hierarchical makes sense, nest folders. "
-        "If flat is better, don't force hierarchy. "
-        "In any case, produce a JSON that might contain nested objects if hierarchical. "
-        "No extra commentary, just the JSON. "
-        "User feedback (if any) that should be considered for improving this structure:\n"
-        f"{user_feedback}\n"
-        "Here are the files:\n\n"
+        "You are given a list of files with tags and summaries. "
+        "Propose a hierarchical folder structure as a nested JSON object. "
+        "Each key is a folder name. Its value can be either an array of file paths or "
+        "another object representing subfolders. Group them by thematic similarity. "
+        "If you see broad categories that can be subdivided, create nested folders. "
+        "Return only valid JSON.\n\n"
+        "Here is the data:\n\n"
         + json.dumps(analysis_results, indent=2) + "\n\n"
-        "Now respond with a single JSON object representing the folder structure."
+        "Now respond with the proposed folder structure."
     )
 
     chat_session = nomenclature_model.start_chat()
@@ -264,8 +298,13 @@ def propose_nomenclature_with_llm(analysis_results: list[dict], user_feedback: s
             logger.error("Error parsing JSON from LLM for nomenclature proposal.")
     else:
         logger.error("No response from LLM for nomenclature proposal.")
+    # fallback
     return {"Misc": [item["filepath"] for item in analysis_results]}
 
+
+########################################################################
+# File Organization
+########################################################################
 
 def scan_directory(directory: str) -> list[str]:
     files = []
@@ -275,12 +314,12 @@ def scan_directory(directory: str) -> list[str]:
                 files.append(str(Path(root) / filename))
     return files
 
-
 def organize_files(chosen_structure: dict, output_dir: str) -> None:
     for theme, content_ in chosen_structure.items():
         theme_dir = Path(output_dir) / Path(theme.strip().replace(" ", "_"))
         theme_dir.mkdir(parents=True, exist_ok=True)
         if isinstance(content_, list):
+            # This folder directly contains files
             for f in content_:
                 src = Path(f)
                 if src.exists():
@@ -288,10 +327,16 @@ def organize_files(chosen_structure: dict, output_dir: str) -> None:
                 else:
                     logger.warning(f"{f} does not exist.")
         elif isinstance(content_, dict):
-            organize_files(content_, str(theme_dir))
+            # Nested structure
+            sub_output_dir = theme_dir
+            organize_files(content_, str(sub_output_dir))
         else:
             logger.warning(f"Unexpected structure type for {theme}")
 
+
+########################################################################
+# Main
+########################################################################
 
 def main():
     parser = argparse.ArgumentParser(description="Organize files using LLM.")
@@ -320,47 +365,37 @@ def main():
         analysis = analyze_file_content(fpath, force_analyze=args.force_reanalyze)
         analysis_results.append({"filepath": fpath, "analysis": analysis})
 
-    user_feedback = ""
-    while True:
-        proposed_structure = propose_nomenclature_with_llm(analysis_results, user_feedback)
-        logger.info("Proposed structure:")
-        logger.info(json.dumps(proposed_structure, indent=2))
+    proposed_structure = propose_nomenclature_with_llm(analysis_results)
+    logger.info("Proposed structure:")
+    logger.info(json.dumps(proposed_structure, indent=2))
 
-        choice = input("Approve, Reject, or Comment? (a/r/c): ").strip().lower()
-        if choice == 'a':
-            # Approved
-            user_comment = input("Optional comment about the final structure (press Enter to skip): ")
-            save_nomenclature_comment(proposed_structure, user_comment)
-            organize_files(proposed_structure, output_dir)
-            report_path = Path(output_dir) / "report.json"
-            with report_path.open('w', encoding='utf-8') as rep:
-                report_data = {
-                    "analysis_results": [
-                        {
-                            "filepath": item["filepath"],
-                            "analysis": item["analysis"],
-                            "file_id": get_file_id(item["filepath"])
-                        } for item in analysis_results
-                    ],
-                    "final_structure": proposed_structure
-                }
-                report_data.update({"nomenclature_comment": get_nomenclature_comment()})
-                json.dump(report_data, rep, indent=2)
-            logger.info(f"Report generated: {report_path}")
-            logger.info("Files organized.")
-            break
-        elif choice == 'r':
-            # Rejected, ask again without changes
-            logger.info("User rejected the structure. Trying again with no additional feedback.")
-            user_feedback = ""
-            continue
-        elif choice == 'c':
-            # User wants to add a comment/feedback
-            user_feedback = input("Enter your feedback to improve the structure: ")
-            logger.info("User provided feedback. Will re-propose structure incorporating feedback.")
-            continue
-        else:
-            logger.info("Invalid choice. Please enter 'a', 'r', or 'c'.")
+    user_input = input("Approve structure? (y/n): ").strip().lower()
+    if user_input != 'y':
+        logger.info("Structure not approved. Exiting.")
+        return
+
+    user_comment = input("Enter comment about structure (press Enter to skip): ")
+    save_nomenclature_comment(proposed_structure, user_comment)
+
+    organize_files(proposed_structure, output_dir)
+
+    report_path = Path(output_dir) / "report.json"
+    with report_path.open('w', encoding='utf-8') as rep:
+        report_data = {
+            "analysis_results": [
+                {
+                    "filepath": item["filepath"],
+                    "analysis": item["analysis"],
+                    "file_id": get_file_id(item["filepath"])
+                } for item in analysis_results
+            ],
+            "final_structure": proposed_structure
+        }
+        report_data.update({"nomenclature_comment": get_nomenclature_comment()})
+        json.dump(report_data, rep, indent=2)
+
+    logger.info(f"Report generated: {report_path}")
+    logger.info("Files organized.")
 
 
 if __name__ == "__main__":
