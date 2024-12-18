@@ -2,14 +2,6 @@ import json
 import logging
 import os
 
-# Load configuration or use defaults
-config = load_config()
-
-# Extract specific configuration values
-supported_ext = tuple(config["supported_extensions"])
-analysis_max_tokens = config["analysis_max_tokens"]
-nomenclature_max_tokens = config["nomenclature_max_tokens"]
-
 def load_config(config_path="config.json"):
     """Loads configuration from a JSON file or uses default values if the file is not found."""
     try:
@@ -18,10 +10,27 @@ def load_config(config_path="config.json"):
     except FileNotFoundError:
         config = {
             "supported_extensions": [".txt", ".docx", ".pdf", ".doc"],
-            "analysis_max_tokens": 1500,
-            "nomenclature_max_tokens": 1000,
+            "analysis_max_tokens": 8192,
+            "nomenclature_max_tokens": 8192,
+            "analysis_temperature": 0.7,
+            "analysis_top_p": 0.8,
+            "nomenclature_temperature": 0.2,
+            "nomenclature_top_p": 0.5
         }
     return config
+
+
+# Load configuration or use defaults
+config = load_config()
+
+# Extract specific configuration values
+supported_ext = tuple(config["supported_extensions"])
+analysis_max_tokens = config["analysis_max_tokens"]
+nomenclature_max_tokens = config["nomenclature_max_tokens"]
+analysis_temperature = config["analysis_temperature"]
+analysis_top_p = config["analysis_top_p"]
+nomenclature_temperature = config["nomenclature_temperature"]
+nomenclature_top_p = config["nomenclature_top_p"]
 
 # Logger setup
 logger = logging.getLogger("organizer")

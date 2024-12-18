@@ -1,5 +1,9 @@
 {
     "supported_extensions": [".txt", ".md", ".doc", ".docx", ".pdf"],
     "analysis_max_tokens": 8192,
-    "nomenclature_max_tokens": 8192
+    "nomenclature_max_tokens": 8192,
+    "analysis_temperature": 0.7,
+    "analysis_top_p": 0.8,
+    "nomenclature_temperature": 0.2,
+    "nomenclature_top_p": 0.5
 }

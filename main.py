@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from file_utils import extract_file_content, get_file_hash
-from llm_client import LLMClient, analysis_generation_config, nomenclature_generation_config
+from llm_client import LLMClient
 from organizer import organize_files, create_folders_recursively, format_structure_output
 from config import logger, config, supported_ext
 from cli import gather_user_feedback_and_improve, parse_arguments
@@ -70,17 +70,16 @@ def main():
     """Main function to orchestrate the file organization process."""
     args = parse_arguments()
 
-    llm_client = LLMClient(analysis_generation_config, nomenclature_generation_config)
+    llm_client = LLMClient() # No arguments needed anymore
     storage = load_storage()
 
     file_analyzer = FileAnalyzer(llm_client, storage)
 
-    files = file_analyzer.scan_directory(args.directory)
-    for file in files:
-        file_analyzer.process_file(file)
+    # Use process_directory which includes a progress bar
+    file_analyzer.process_directory(args.target_folder)
 
     proposed_structure = llm_client.propose_structure(
-        [item["analysis"] for item in storage.values()]
+        [item["analysis"] for item in storage.values() if item.get("analysis")]
     )
 
     formatted_structure = format_structure_output(proposed_structure)
@@ -93,15 +92,23 @@ def main():
 
     if approved_structure:
         logger.info("Organizing files...")
-        create_folders_recursively(args.directory, approved_structure)
-        organize_files(args.directory, approved_structure, storage)
+        # Extract filenames from storage and add them to approved_structure
+        files_mapping = {
+            Path(item["path"]).name: ""
+            for item in storage.values()
+            if item.get("analysis")
+        }
+
+        approved_structure = {**approved_structure, **files_mapping}
+
+        create_folders_recursively(args.target_folder, approved_structure)
+        organize_files(args.target_folder, approved_structure, storage)
         logger.info("Files organized successfully!")
     else:
         logger.info("File organization cancelled.")
 
     save_storage(storage)
     generate_report(storage)
-
 
 if __name__ == "__main__":
     main()

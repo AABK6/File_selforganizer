@@ -58,7 +58,7 @@ def extract_text_from_doc(filepath: str) -> str:
         return ""
 
 
-def extract_file_content(filepath: str, supported_ext) -> str:
+def extract_file_content(filepath: str) -> str:
     """Dispatch extraction based on file extension."""
     ext = Path(filepath).suffix.lower()
     if ext in ['.txt', '.md']:
