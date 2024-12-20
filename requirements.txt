@@ -2,5 +2,5 @@ python-docx
 PyPDF2
 tqdm
 jsonschema
-google-genai
-genai
+google.genai
+google

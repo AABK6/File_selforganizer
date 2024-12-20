@@ -15,18 +15,32 @@ from google import genai
 from google.genai import types
 
 # Response schema for validation
-analysis_response_schema = {
-    "type": "array",
-    "items": {
-        "type": "object",
-        "properties": {
-            "entity": {"type": "string"},
-            "category": {"type": "string"},
-            "importance": {"type": "string", "enum": ["high", "medium", "low"]},
-            "explanation": {"type": "string"},
+document_analysis_schema = {
+    "type": "object",
+    "properties": {
+        "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "maxItems": 20
         },
-        "required": ["entity", "category", "importance", "explanation"],
+        "summary": {"type": "string"},
+        "entities": {
+            "type": "object",
+            "properties": {
+                "authors": {"type": "array", "items": {"type": "string"}},
+                "intended_recipients": {"type": "array", "items": {"type": "string"}},
+                "organizations": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
+                "locations": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
+                "dates": {"type": "array", "items": {"type": "string"}}
+            },
+            "required": ["authors", "intended_recipients", "organizations", "locations", "dates"]
+        },
+        "key_phrases": {"type": "array", "items": {"type": "string"}, "maxItems": 15},
+        "sentiment": {"type": "string", "enum": ["positive", "negative", "neutral"]},
+        "document_form": {"type": "string"},
+        "document_purpose": {"type": "string"}
     },
+    "required": ["tags", "summary", "entities", "key_phrases", "sentiment", "document_form", "document_purpose"]
 }
 
 class LLMClient:
@@ -35,10 +49,60 @@ class LLMClient:
         if not self.api_key:
             raise ValueError("Environment variable GENAI_API_KEY is not set.")
         self.client = genai.Client(api_key=self.api_key)
-        self.analysis_model = 'gemini-pro'
-        self.nomenclature_model = 'gemini-pro'
+        self.analysis_model = 'gemini-2.0-flash-exp'
+        self.nomenclature_model = 'gemini-2.0-flash-exp'
 
-    def _generate_with_retry(self, model, contents, generation_config, max_retries=3):
+
+    def analyze_text(self, text):
+        """Analyzes document content and returns structured information."""
+        prompt = f"""Analyze the following document and provide a structured analysis in JSON format.
+        Focus on extracting key information including tags, summary, entities, key phrases, sentiment, and document metadata.
+        Format the output exactly as specified, ensuring dates are in YYYY-MM-DD format.
+        
+        Document:
+        {text}
+        
+        Provide analysis in the following JSON structure:
+        {{
+            "tags": ["limit to 20 most relevant categorical labels"],
+            "summary": "brief document overview",
+            "entities": {{
+                "authors": ["detected author names"],
+                "intended_recipients": ["detected recipient names"],
+                "organizations": ["max 10 key organizations"],
+                "locations": ["max 10 key locations"],
+                "dates": ["dates in YYYY-MM-DD format"]
+            }},
+            "key_phrases": ["max 15 important phrases"],
+            "sentiment": "positive/negative/neutral",
+            "document_form": "document type",
+            "document_purpose": "document intent"
+        }}"""
+
+        generation_config = genai.types.GenerationConfig(
+            max_output_tokens=analysis_max_tokens,
+            temperature=analysis_temperature,
+            top_p=analysis_top_p
+        )
+
+        response = self._generate_with_retry(
+            model=self.analysis_model,
+            contents=prompt,
+            config=generation_config
+        )
+
+        if response:
+            try:
+                analysis = json.loads(response.text)
+                jsonschema.validate(analysis, document_analysis_schema)
+                return analysis
+            except (json.JSONDecodeError, jsonschema.exceptions.ValidationError) as e:
+                logger.error(f"Error processing analysis response: {str(e)}")
+                raise ValueError("Failed to generate valid document analysis")
+        return None
+    
+
+    def _generate_with_retry(self, model, contents, config, max_retries=3):
         """Generates text with exponential backoff retry mechanism."""
         retries = 0
         while retries < max_retries:
@@ -46,12 +110,12 @@ class LLMClient:
                 response = self.client.models.generate_content(
                     model=model,
                     contents=contents,
-                    config=generation_config  # Correct parameter name
+                    config=config
                 )
                 return response
             except Exception as e:
                 retries += 1
-                wait_time = 2 ** retries  # Exponential backoff
+                wait_time = 1 ** retries
                 logger.warning(
                     f"LLM request failed (attempt {retries}/{max_retries}): {e}. Retrying in {wait_time} seconds."
                 )
@@ -60,46 +124,9 @@ class LLMClient:
             f"LLM request failed after {max_retries} retries."
         )
 
-    def analyze_text(self, text):
-        """Analyzes text using the LLM and validates the response."""
-        prompt = f"""Analyze the following document and extract key entities, their categories, and importance levels. Provide reasoning for each assignment.
 
-        **Constraints:**
-        - Classify importance as 'high', 'medium', or 'low'.
-        - Provide a concise explanation for each classification.
-        - Return the results in JSON format strictly adhering to the following schema:
 
-        ```json
-        {json.dumps(analysis_response_schema)}
-        ```
 
-        ## Document:
-        {text}"""
-
-        generation_config = genai.types.GenerationConfig(
-            candidate_count=1,
-            stop_sequences=["\n\n\n"],
-            max_output_tokens=analysis_max_tokens,
-            temperature=analysis_temperature,
-            top_p=analysis_top_p
-        )
-
-        response = self._generate_with_retry(
-            model=self.analysis_model,
-            contents=[{"parts": [{"text": prompt}]}],  # Correct format for contents
-            generation_config=generation_config,
-        )
-
-        try:
-            analysis_result = json.loads(response.text)
-            jsonschema.validate(instance=analysis_result, schema=analysis_response_schema)
-        except (json.JSONDecodeError, jsonschema.ValidationError) as e:
-            logger.error(
-                f"Invalid JSON response from LLM: {e}, Response: {response.text}"
-            )
-            raise
-
-        return analysis_result
 
     def propose_structure(self, analysis_results, history=""):
         """Proposes a file organization structure using the LLM."""
@@ -170,7 +197,7 @@ class LLMClient:
         response = self._generate_with_retry(
             model=self.nomenclature_model,
             contents=[{"parts": [{"text": prompt}]}],  # Correct format for contents
-            generation_config=generation_config,
+            config=generation_config,
         )
         try:
             nomenclature_proposal = response.text
