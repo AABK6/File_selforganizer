@@ -1,5 +1,6 @@
 python-docx
 PyPDF2
+beautifulsoup4
 tqdm
 jsonschema
 google.genai

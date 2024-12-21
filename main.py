@@ -38,6 +38,7 @@ class FileAnalyzer:
 
         file_content = extract_file_content(file_path)
         analysis_result = self.llm_client.analyze_text(file_content)
+        analysis_result['filename'] = os.path.basename(file_path)
         self.storage[file_hash] = {
             "path": str(file_path),
             "content": file_content,
@@ -78,6 +79,7 @@ def main():
     # Use process_directory which includes a progress bar
     file_analyzer.process_directory(args.target_folder)
 
+    analysis_results = [item["analysis"] for item in storage.values() if item.get("analysis")]
     proposed_structure = llm_client.propose_structure(
         [item["analysis"] for item in storage.values() if item.get("analysis")]
     )
@@ -87,7 +89,7 @@ def main():
     print(formatted_structure)
 
     approved_structure = gather_user_feedback_and_improve(
-        llm_client, proposed_structure
+        llm_client, proposed_structure, analysis_results
     )
 
     if approved_structure:

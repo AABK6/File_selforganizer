@@ -8,7 +8,7 @@ from organizer import format_structure_output  # Import from organizer.py
 
 
 def gather_user_feedback_and_improve(
-    llm_client: LLMClient, proposed_structure: dict
+    llm_client: LLMClient, proposed_structure: dict, analysis_results: list
 ):
     """Gathers user feedback on the proposed structure and refines it using the LLM."""
     logger.info("Proposed structure:")
@@ -28,9 +28,9 @@ def gather_user_feedback_and_improve(
         elif user_input == "f":
             feedback = input("Please provide your feedback on the structure: ")
             logger.info(f"User feedback: {feedback}")
-            proposed_structure = llm_client.propose_structure(feedback, proposed_structure)
+            proposed_structure = llm_client.propose_structure(analysis_results, feedback)
             logger.info("Revised structure based on feedback:")
-            logger.info(format_structure_output(proposed_structure))  # Use format_structure_output from organizer.py
+            logger.info(format_structure_output(proposed_structure))
         else:
             logger.warning("Invalid input. Please enter 'a', 'r', or 'f'.")
 
@@ -45,5 +45,10 @@ def parse_arguments():
         type=str,
         default="config.json",
         help="Path to the configuration file (default: config.json).",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        help="Path to the output directory"
     )
     return parser.parse_args()

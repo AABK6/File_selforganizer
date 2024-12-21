@@ -4,9 +4,42 @@ from pathlib import Path
 import docx
 import PyPDF2
 import logging
+from bs4 import BeautifulSoup
+import email
 
-from config import logger 
+from config import logger
+
 logger = logging.getLogger(__name__)
+
+
+def extract_text_from_html(filepath: str) -> str:
+    """Extract text from an .html file using BeautifulSoup."""
+    try:
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            soup = BeautifulSoup(f, 'html.parser')
+            return soup.get_text()
+    except Exception as e:
+        logger.warning(f"Failed to extract text from {filepath}: {e}")
+        return ""
+
+
+def extract_text_from_eml(filepath: str) -> str:
+    """Extract text from a .eml file using the email library."""
+    try:
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            msg = email.message_from_file(f)
+            text = ""
+            if msg.is_multipart():
+                for part in msg.walk():
+                    content_type = part.get_content_type()
+                    if content_type == 'text/plain':
+                        text += part.get_payload(decode=True).decode('utf-8', errors='ignore')
+            else:
+                text = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
+            return text
+    except Exception as e:
+        logger.warning(f"Failed to extract text from {filepath}: {e}")
+        return ""
 
 
 def extract_text_from_txt(filepath: str) -> str:
@@ -69,6 +102,10 @@ def extract_file_content(filepath: str) -> str:
         return extract_text_from_pdf(filepath)
     elif ext == '.doc':
         return extract_text_from_doc(filepath)
+    elif ext == '.html':
+        return extract_text_from_html(filepath)
+    elif ext == '.eml':
+        return extract_text_from_eml(filepath)
     return ""
 
 

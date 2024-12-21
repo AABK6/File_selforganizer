@@ -90,14 +90,15 @@ class LLMClient:
 
     def propose_structure(self, analysis_results: list[str], feedback: str = None) -> dict:
         """Proposes a folder structure based on the analysis results."""
-        prompt = "Based on the following text analysis, propose a hierarchical folder structure to organize these documents:\n"
+        prompt ="Based on the following text analysis, propose a hierarchical folder structure to organize these documents, including the specific filenames that should be placed in each folder:\n"
         for i, result in enumerate(analysis_results):
-            prompt += f"Document {i+1}: {result}\n"
+            filename = result.get('filename', f'Document {i+1}')
+            prompt += f"Document {i+1} (Filename: {filename}): {result}\n"
 
         if feedback:
             prompt += f"\nConsidering the feedback: '{feedback}', refine the folder structure."
 
-        prompt += "\nThe folder structure should be a JSON object where keys are folder names and values are either sub-folders (as nested JSON objects) or an empty dictionary if the folder contains files. Do not include the filenames in the structure, only the folder hierarchy."
+        prompt += "\nThe folder structure should be a JSON object where keys are folder names and values are either sub-folders (as nested JSON objects) or a list of filenames (strings) if the folder contains files. The structure should specify the exact placement of each file within the folder hierarchy."
 
         logger.debug(f"Proposing structure with model '{self.nomenclature_model}':\n{prompt}")
         try:

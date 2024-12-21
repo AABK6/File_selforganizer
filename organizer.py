@@ -8,17 +8,17 @@ def organize_files(base_dir, folder_structure, storage):
 
     Args:
         base_dir (str): The base directory where files are located.
-        folder_structure (dict): A dictionary representing the folder structure.
+        folder_structure (dict): A dictionary representing the folder structure,
+                                 including filenames within folders.
         storage (dict): The storage dictionary containing file information.
     """
     logger.info("Organizing files...")
 
     for file_hash, file_info in storage.items():
         filename = os.path.basename(file_info['path'])
-        analysis = file_info.get('analysis', {})  # Get analysis, default to empty dict
 
         # Find the correct destination path based on the approved structure
-        destination_folder = find_destination_folder(folder_structure, analysis)
+        destination_folder = find_destination_folder(folder_structure, filename)
         if destination_folder:
             source_path = file_info['path']
             destination_path = os.path.join(base_dir, destination_folder, filename)
@@ -36,19 +36,18 @@ def organize_files(base_dir, folder_structure, storage):
         else:
             logger.warning(f"No destination folder found for '{filename}'.")
 
-def find_destination_folder(folder_structure, analysis_data):
+def find_destination_folder(folder_structure, filename):
     """
-    Finds the destination folder path within the nested structure based on analysis data.
-    This is a placeholder and needs to be implemented based on how your LLM proposes the structure
-    and how you want to map analysis data to folder paths.
+    Finds the destination folder path for a given filename within the nested structure.
     """
-    # Simple example: Assuming the top-level keys in folder_structure are categories
-    for category, sub_structure in folder_structure.items():
-        # Implement your logic to determine if the analysis_data belongs to this category
-        # For example, check if a specific tag or entity is present in the analysis_data
-        if analysis_data and analysis_data.get('tags') and category in analysis_data['tags']:
-            return category
-        # Add more sophisticated logic to traverse sub_structures if needed
+    for folder, contents in folder_structure.items():
+        if isinstance(contents, list):  # This folder contains files
+            if filename in contents:
+                return folder
+        elif isinstance(contents, dict):  # This folder contains subfolders
+            subfolder_result = find_destination_folder(contents, filename)
+            if subfolder_result:
+                return os.path.join(folder, subfolder_result)
     return None
 
 def format_structure_output(structure):
@@ -60,6 +59,9 @@ def format_structure_output(structure):
             output += "  " * indent + "- " + key + "\n"
             if isinstance(value, dict):
                 output += format_recursive(value, indent + 1)
+            elif isinstance(value, list):  # List of filenames
+                for filename in value:
+                    output += "  " * (indent + 1) + "- " + filename + "\n"
         return output
 
     return format_recursive(structure)
@@ -80,6 +82,7 @@ def create_folders_recursively(base_dir, folder_structure):
                 logger.info(f"Created folder: {folder_path}")
                 if isinstance(sub_structure, dict):
                     create_folders(sub_structure, folder_path)
+                # No need to handle files here, they are just names in the structure
             except OSError as e:
                 logger.error(f"Error creating folder '{folder_path}': {e}")
 
