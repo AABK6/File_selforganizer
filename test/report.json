@@ -1,0 +1,966 @@
+{
+  "analysis_results": [
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Commercial_Documents/KLMinvoice17092024.pdf",
+      "tags": [
+        "invoice",
+        "air travel"
+      ],
+      "summary": "Invoice KLNL0023680283 dated 2024-10-09 for air travel services provided by KLM Royal Dutch Airlines.",
+      "entities": {
+        "authors": [
+          "KLM ROYAL DUTCH AIRLINES"
+        ],
+        "intended_recipients": [
+          "NEDERLANDADRIEN ABECASSIS"
+        ],
+        "dates": [
+          "2024-10-09",
+          "2024-08-29",
+          "2024-09-17"
+        ],
+        "locations": [
+          "SCHIPHOL AIRPORT",
+          "AMSTERDAM",
+          "LOS ANGELES",
+          "SAN FRANCISCO",
+          "LONDON",
+          "SEATTLE"
+        ],
+        "organizations": [
+          "KLM ROYAL DUTCH AIRLINES"
+        ]
+      },
+      "key_phrases": [
+        "International Air Ticket",
+        "Ticketing fee"
+      ],
+      "sentiment": "neutral",
+      "document_form": "invoice",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Finance_&_Development/Proposals/BMGF_PPF_Proposal_WORKING_AA.docx",
+      "tags": [
+        "collaboration",
+        "partnership",
+        "global health",
+        "development",
+        "climate",
+        "food",
+        "nutrition"
+      ],
+      "summary": "This report details a four-year collaboration between the Bill & Melinda Gates Foundation and the Paris Peace Forum, highlighting their joint efforts in global health, climate change, food systems, and nutrition.  It outlines various workstreams, challenges, and proposed solutions, including a framework for prioritizing children in concessional finance, a mechanism for fair benefit sharing in pandemic preparedness, and a new platform (ATLAS) for North-South dialogue on sustainable agricultural development in Africa.  The document also details plans for the Paris Peace Forum's 2024-2027 strategy and upcoming events, such as the Nutrition for Growth Summit.",
+      "entities": {
+        "authors": [
+          "Paris Peace Forum"
+        ],
+        "intended_recipients": [
+          "Bill & Melinda Gates Foundation"
+        ],
+        "organizations": [
+          "Bill and Melinda Gates Foundation",
+          "Paris Peace Forum",
+          "ACT-A accelerator",
+          "The Lancet",
+          "G7",
+          "G20",
+          "UNGA",
+          "COP",
+          "IFAD",
+          "AGRA",
+          "AFD",
+          "Mo Ibrahim foundation",
+          "OCP",
+          "SBTI-FLAG",
+          "TNFD",
+          "Regen10",
+          "SAI Platform",
+          "FAO",
+          "UNFSS",
+          "WHO",
+          "UNICEF",
+          "WFP",
+          "GAIN",
+          "ATNI",
+          "Amref",
+          "Action Contre la Faim",
+          "SUN Movement",
+          "BCG",
+          "Helen Keller Foundation"
+        ]
+      },
+      "key_phrases": [
+        "collaboration",
+        "partnership",
+        "global health",
+        "global development",
+        "climate change",
+        "food systems",
+        "investment",
+        "sustainable development",
+        "fair benefit sharing",
+        "pandemic preparedness",
+        "nutrition",
+        "children",
+        "concessional finance",
+        "SDGs"
+      ],
+      "sentiment": "positive",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Finance_&_Development/Proposals/JP Landau_A Abecassis_3q_NouveauPacteFinancier_Focus2030.docx",
+      "tags": [
+        "finance",
+        "development",
+        "climate change",
+        "summit",
+        "international cooperation"
+      ],
+      "summary": "This document outlines the upcoming Paris Summit for a New Global Financial Pact, co-organized by France and India.  It details the summit's ambitions, proposed avenues for achieving them, and the post-summit steps needed for its sustainability.  The summit aims to address global financial challenges, including climate change, inequality, and crises, by reforming the international financial architecture and mobilizing resources from public and private sectors.",
+      "entities": {
+        "authors": [
+          "Jean-Pierre Landau",
+          "Adrien Ab\u00e9cassis"
+        ],
+        "intended_recipients": [
+          "journalists",
+          "general public"
+        ],
+        "organizations": [
+          "Focus 2030"
+        ]
+      },
+      "key_phrases": [
+        "Sommet pour un nouveau pacte financier mondial",
+        "architecture financi\u00e8re internationale",
+        "d\u00e9veloppement mondial",
+        "transition climatique",
+        "financement du d\u00e9veloppement",
+        "pauvret\u00e9",
+        "endettement",
+        "crises",
+        "banques multilat\u00e9rales de d\u00e9veloppement",
+        "Objectifs de d\u00e9veloppement durable"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/General_Documents/Briefing_Notes/WHO Work on Health Taxes BrieferF.PDF",
+      "tags": [],
+      "summary": "No summary available.",
+      "entities": {},
+      "key_phrases": [],
+      "sentiment": "neutral",
+      "document_form": "",
+      "document_purpose": ""
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/General_Documents/Letters_&_Statements/lettre d'introduction Justin Va\u00efsse.docx",
+      "tags": [
+        "responsible transition minerals",
+        "meeting",
+        "global council",
+        "Paris Peace Forum"
+      ],
+      "summary": "The Director General of the Paris Peace Forum welcomes the members of the Global Council for Responsible Transition Minerals to their inaugural meeting.  The letter highlights the increasing demand for minerals crucial to technologies like wind turbines and batteries, and the urgent need for international coordination to address the associated economic, environmental, and societal challenges.  The council's role is emphasized in fostering collaboration, providing policy recommendations, and achieving a responsible transition.",
+      "entities": {
+        "authors": [
+          "Justin Va\u00efsse"
+        ],
+        "intended_recipients": [
+          "Members of the Global Council for Responsible Transition Minerals"
+        ],
+        "organizations": [
+          "Paris Peace Forum"
+        ]
+      },
+      "key_phrases": [
+        "transition minerals",
+        "international collaboration",
+        "responsible mining",
+        "energy transition",
+        "economic development"
+      ],
+      "sentiment": "positive",
+      "document_form": "letter",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/General_Documents/Letters_&_Statements/SC - Framework for statement (ITALY REV).docx",
+      "tags": [
+        "climate change",
+        "global cooperation",
+        "development",
+        "finance",
+        "poverty"
+      ],
+      "summary": "This document outlines various objectives, including fighting poverty, supporting vulnerable countries, promoting global cooperation, and addressing climate change. It discusses challenges, principles, and strategies for mobilizing resources, scaling up private capital flows, addressing vulnerability, and reforming global architectures. It highlights the need for concessional finance, private sector involvement, and multilateral cooperation.",
+      "entities": {
+        "authors": [],
+        "intended_recipients": [],
+        "organizations": [
+          "G20",
+          "World Bank"
+        ]
+      },
+      "key_phrases": [
+        "Fighting poverty",
+        "Supporting vulnerable countries",
+        "The planet and global public goods",
+        "Promoting global cooperation",
+        "Challenges for the global community",
+        "Principles on Climate, Finance and Development",
+        "Mobilising and channelling resources",
+        "Concessional finance",
+        "Scaling up private capital flows",
+        "Addressing vulnerability",
+        "Innovative sources of finance",
+        "A reformed architecture",
+        "Follow-up and avenues for the future"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/General_Documents/Letters_&_Statements/SC Paris Summit - Possible draft statement - June 19 - Copy.docx",
+      "tags": [
+        "climate change",
+        "development",
+        "finance",
+        "global cooperation"
+      ],
+      "summary": "Participants at the Paris Summit affirmed their commitment to addressing climate, nature, and development challenges through increased global cooperation.  A New Global Financing Pact was proposed, emphasizing four guiding principles: fighting poverty and climate change simultaneously; country ownership of transition strategies; an international financial system that delivers resources; and an international financial system that works for everyone. The pact highlights the need for concessional finance, private sector mobilization, and reforms to Multilateral Development Banks (MDBs) to achieve the Sustainable Development Goals (SDGs) and address global challenges.",
+      "entities": {
+        "authors": [
+          "Participants to the Paris Summit"
+        ],
+        "intended_recipients": [
+          "global community"
+        ],
+        "organizations": [
+          "G20",
+          "IMF",
+          "World Bank",
+          "COP28",
+          "Paris Summit",
+          "MDBs",
+          "MIGA",
+          "UN agencies"
+        ]
+      },
+      "key_phrases": [
+        "global cooperation",
+        "climate change",
+        "development challenges",
+        "financial system",
+        "poverty reduction",
+        "green transition",
+        "concessional finance",
+        "private sector mobilization",
+        "Multilateral Development Banks",
+        "debt restructuring"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/General_Documents/Letters_&_Statements/SC Paris Summit - Possible draft statement - June 19.docx",
+      "tags": [
+        "climate",
+        "development",
+        "finance",
+        "global",
+        "cooperation",
+        "summit"
+      ],
+      "summary": "Participants to the Paris Summit affirmed their commitment to addressing climate, nature, and development challenges through global cooperation.  A New Global Financing Pact was proposed, outlining priorities for a shock-responsive financial system fit for the 21st century.  The pact emphasizes the interconnectedness of fighting poverty and climate change, country-led transition strategies, an improved international financial system, and the crucial role of the private sector and multilateral development banks.  Key principles include fighting poverty while fighting climate change, country ownership of transition strategies, an international financial system that delivers more resources, and an international financial system that works for everyone.",
+      "entities": {
+        "authors": [
+          "Participants to the Paris Summit"
+        ],
+        "intended_recipients": [
+          "Global community"
+        ],
+        "locations": [
+          "Paris",
+          "Delhi",
+          "Marrakech",
+          "Dubai"
+        ],
+        "organizations": [
+          "G20",
+          "IMF",
+          "World Bank",
+          "COP28"
+        ]
+      },
+      "key_phrases": [
+        "climate change",
+        "global cooperation",
+        "financial system",
+        "poverty reduction",
+        "development",
+        "green transition",
+        "global public goods",
+        "concessional finance",
+        "private sector mobilization",
+        "Multilateral Development Banks"
+      ],
+      "sentiment": "positive",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/General_Documents/Letters_&_Statements/Summary FBS 2.docx",
+      "tags": [
+        "meeting",
+        "advisory group",
+        "fair benefit-sharing",
+        "scientific data",
+        "pandemic"
+      ],
+      "summary": "Second meeting of the Advisory group on fair benefit-sharing of scientific data.  Participants discussed the different approaches to fair benefit-sharing, emphasizing the need for solidarity in pandemic preparedness and response, particularly in light of unequal access to medical countermeasures during the COVID-19 pandemic.  The conversation explored the concept of reciprocity and the need for a reward mechanism that recognizes the value of scientific discoveries for the general interest, avoiding patenting.  Participants also discussed the challenges of compensation mechanisms and the importance of considering the international ecosystem as a whole.  The need for common rules for governments and the private sector and a dedicated institution for a compensatory mechanism was highlighted.",
+      "entities": {
+        "authors": [
+          "Prof Salim Abdool Karim",
+          "Prof Tulio de Oliveira",
+          "Prof Anthony So",
+          "Dr Magda Robalo",
+          "Dr Sikhulile Moyo",
+          "Fatima Abba",
+          "Mikael Garnier-Lavalley",
+          "Aur\u00e9lie Jousset"
+        ],
+        "intended_recipients": [],
+        "organizations": [
+          "CAPRISA",
+          "Stellenbosch University",
+          "Johns Hopkins Bloomberg School of Public Health",
+          "Bill & Melinda Gates Foundation",
+          "French Ministry of Health",
+          "Gavi",
+          "Botswana-Harvard AIDS Institute Partnership"
+        ]
+      },
+      "key_phrases": [
+        "fair benefit-sharing",
+        "scientific data",
+        "pandemic preparedness",
+        "solidarity",
+        "reciprocity",
+        "compensation",
+        "medical countermeasures",
+        "compensation mechanism",
+        "international solutions"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Paris_Peace_Forum_Documents/2021/20210614 - A Preview of the 4th Edition of the Paris Peace Forum 11-13 Nov 2021.docx",
+      "tags": [],
+      "summary": "No summary available.",
+      "entities": {},
+      "key_phrases": [],
+      "sentiment": "neutral",
+      "document_form": "",
+      "document_purpose": ""
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Paris_Peace_Forum_Documents/2022/20220830 Policy-project team retreat summary RN (Adrien Ab\u00e9cassis).docx",
+      "tags": [],
+      "summary": "Meeting summary and take-aways from a full-day retreat of the Policy and projects team.  Key themes included the team's purpose, achieving impact, focusing on niches, understanding decision-making processes, demonstrating a different type of diplomacy, and bringing people together.  Areas of future work included nature preservation, human security, and conflict resolution.  Success in policy and project initiatives was discussed, highlighting commonalities, obstacles, and the need for clearer paths to success and quantifiable measurements.  Teamwork, coordination, and clarifying roles were also addressed, along with leveraging expertise and valuing other skills.  The importance of time constraints and balancing ambition with resources was recognized.  The need for better integration between project and policy work was emphasized, as well as revamping the project selection process.  Finally, the importance of the Forum for advancing policy objectives and bringing in new stakeholders was highlighted.",
+      "entities": {
+        "authors": [],
+        "intended_recipients": [],
+        "dates": [
+          "2022-08-30"
+        ],
+        "locations": [],
+        "organizations": [
+          "Policy and projects team"
+        ]
+      },
+      "key_phrases": [
+        "impact",
+        "niche",
+        "decision-making",
+        "diplomacy",
+        "international relations",
+        "nature and biodiversity",
+        "normative frameworks",
+        "human security",
+        "conflict resolution",
+        "positive peace",
+        "policy",
+        "projects",
+        "obstacles",
+        "change",
+        "North/South gap",
+        "decentralization",
+        "diversity",
+        "success",
+        "objectives",
+        "stages",
+        "path",
+        "quantitative measurement",
+        "leapfrog change",
+        "indicators",
+        "metrics",
+        "branding",
+        "coalitions",
+        "multilateral system",
+        "competition",
+        "ways of working together",
+        "linking projects and policy",
+        "broader coordination",
+        "roles and responsibilities",
+        "understanding and cooperation",
+        "expertise",
+        "skills",
+        "attitude",
+        "time constraints",
+        "mismatch",
+        "resources",
+        "integration",
+        "win-wins",
+        "policy coalitions",
+        "project leaders",
+        "concrete realities",
+        "collaboration",
+        "joint projects",
+        "policy field trip",
+        "project selection and support process",
+        "policy priorities",
+        "random projects",
+        "different ways",
+        "open calls",
+        "targeted outreach",
+        "Space for Solutions",
+        "SCUP",
+        "policy work at the forum",
+        "impactful",
+        "new stakeholders",
+        "consensus",
+        "decision-making",
+        "policy priorities",
+        "initiatives",
+        "takeoff or landing strip",
+        "coalitions",
+        "accreditations",
+        "social moments",
+        "policy communities",
+        "expertise",
+        "quality of presentation",
+        "level of engagement",
+        "contributions",
+        "diversity",
+        "organization of the round table",
+        "dialogue",
+        "stakeholders",
+        "perspectives",
+        "recommendations",
+        "open",
+        "closed",
+        "preparation",
+        "stakeholders",
+        "orchestrate the session",
+        "moderators",
+        "briefing",
+        "familiar",
+        "work",
+        "issues",
+        "impact",
+        "teams",
+        "chain",
+        "agreed deadlines",
+        "flexibility",
+        "quality",
+        "high ambition",
+        "timeliness",
+        "effective delivery",
+        "reflection",
+        "exchange notes",
+        "energy",
+        "ideas",
+        "corner",
+        "event",
+        "broader strategy",
+        "thinking",
+        "Eulogies",
+        "individual initiatives",
+        "success",
+        "knowledge",
+        "climate risk",
+        "intergenerational aspect",
+        "youth movement",
+        "decision making",
+        "global cooperation",
+        "new technologies",
+        "redistribution",
+        "know-how",
+        "technologies",
+        "carbon dioxide removal",
+        "CDR",
+        "sunlight reflection methods",
+        "climate overshoot",
+        "greenhouse emissions",
+        "sustainable solutions",
+        "sustainable outer space",
+        "supporters",
+        "commercial active debris removal",
+        "ADR",
+        "mission",
+        "low Earth orbit",
+        "LEO",
+        "debris",
+        "geopolitical scenarios",
+        "awareness",
+        "cooperation",
+        "information sharing",
+        "ADR missions",
+        "worrying objects",
+        "working group",
+        "deliverables",
+        "recommendations",
+        "UNs open ended working group",
+        "draft international treaty",
+        "ADR",
+        "decade",
+        "events",
+        "incidents",
+        "cyberconflict",
+        "civilians",
+        "awareness",
+        "political actors",
+        "Paris Call",
+        "community",
+        "arms control regime",
+        "cyber non-proliferation",
+        "effective treaty",
+        "variations",
+        "systemic players",
+        "movement",
+        "adoption",
+        "Rome Statute",
+        "momentum",
+        "mobilization",
+        "NGOs",
+        "civil society",
+        "deliverable",
+        "standards",
+        "attacker uncertainty",
+        "attribution",
+        "States",
+        "humanitarian law",
+        "space",
+        "proliferation",
+        "ad hoc negotiations",
+        "states",
+        "privileges",
+        "scale up",
+        "support",
+        "solutions",
+        "impact",
+        "world",
+        "negotiations",
+        "states",
+        "high seas treaty",
+        "cooperative",
+        "company",
+        "refugee women",
+        "funding",
+        "European Commission",
+        "event",
+        "Afghanistan",
+        "fall",
+        "Taliban regime",
+        "street art",
+        "artists",
+        "cultural heritage",
+        "preserved",
+        "ALIPH",
+        "international organizations",
+        "companies",
+        "NGOs",
+        "recognized accelerator",
+        "solutions",
+        "global governance actors",
+        "projects",
+        "mentors",
+        "global events",
+        "donors",
+        "promising projects",
+        "invite",
+        "fund",
+        "financing",
+        "social impact bonds",
+        "high return",
+        "investment",
+        "global indicators",
+        "critical materials",
+        "mining",
+        "materials",
+        "less polluting",
+        "socially responsible",
+        "high seas extraction",
+        "globally banned",
+        "demand",
+        "improved supply",
+        "land sources",
+        "damage",
+        "biodiversity",
+        "extensive circular economy",
+        "recycling sector",
+        "reliable access",
+        "key materials",
+        "community",
+        "actors",
+        "value chain",
+        "autonomy",
+        "access",
+        "materials",
+        "ecological transition",
+        "closed production loops",
+        "production",
+        "transformation",
+        "producing countries",
+        "Europe",
+        "imports",
+        "raw materials",
+        "transformed products",
+        "leapfrog",
+        "green energy production",
+        "Africa",
+        "outbreak",
+        "pandemic",
+        "political action",
+        "historical health summit",
+        "case study",
+        "pandemic warning systems",
+        "funding",
+        "cooperation",
+        "model",
+        "actors",
+        "South",
+        "develop",
+        "production capacities",
+        "initiative",
+        "genomics",
+        "technology",
+        "modifications",
+        "human genome",
+        "medical uses",
+        "sequencing",
+        "viruses",
+        "capacities",
+        "respond",
+        "epidemics",
+        "medicines",
+        "global South",
+        "obstacles",
+        "private sector",
+        "agenda",
+        "foundations",
+        "global North",
+        "WHO",
+        "difficulties",
+        "challenged",
+        "strengthened",
+        "expanded capacities",
+        "adjusted",
+        "governance models",
+        "acceleration",
+        "development",
+        "AI",
+        "political",
+        "social aspects",
+        "public space",
+        "transport",
+        "finance",
+        "legal aid",
+        "distribution powers",
+        "public",
+        "private",
+        "unstable",
+        "Great Technological Polarization",
+        "digital space",
+        "US",
+        "liberal",
+        "democratic preferences",
+        "China",
+        "control",
+        "authoritarianism",
+        "Europe",
+        "regulatory power",
+        "develop",
+        "technology",
+        "defends",
+        "interests",
+        "market",
+        "regulatory power",
+        "early initiatives",
+        "civil society",
+        "South",
+        "digital issues",
+        "emergence",
+        "third model",
+        "development",
+        "AI technologies",
+        "disagreements",
+        "members",
+        "split",
+        "alliance",
+        "advocate",
+        "independently"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Paris_Peace_Forum_Documents/2023/20230214 - Paris Call OEWG7 Side Event Proliferation.docx",
+      "tags": [
+        "cybersecurity",
+        "international cooperation",
+        "policy",
+        "technology"
+      ],
+      "summary": "This document outlines the Pall Mall Process, an international effort to address the proliferation and irresponsible use of cyber intrusion capabilities. It details the process's origins, goals, and challenges, emphasizing the need for universal participation and coordination among stakeholders. A workshop is planned to identify priority areas and gaps in addressing this issue, including the involvement of non-state actors.",
+      "entities": {
+        "authors": [
+          "France",
+          "United Kingdom"
+        ],
+        "intended_recipients": [
+          "stakeholders",
+          "industry partners",
+          "civil society organizations",
+          "States"
+        ],
+        "organizations": [
+          "UNODA",
+          "UNIDIR",
+          "Ford Foundation",
+          "Apple",
+          "Paris Call"
+        ]
+      },
+      "key_phrases": [
+        "Cyber Intrusion Capabilities",
+        "Commercial Cyber Proliferation",
+        "Irresponsible Use",
+        "Multi-stakeholder Agenda",
+        "Pall Mall Process",
+        "OEWG Seventh Substantive Session"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Paris_Peace_Forum_Documents/2023/Draft_Outcome document_WG4_Innovative financing_(05.06.23) revBMZ JZ.DOCX",
+      "tags": [
+        "climate change",
+        "financing",
+        "debt",
+        "sustainability",
+        "development"
+      ],
+      "summary": "This document outlines principles and commitments from a working group (WG4) focused on innovative solutions to support climate-vulnerable countries.  Key areas include alleviating debt burdens, mobilizing additional financing, leveraging pre-arranged finance, and utilizing carbon markets.  Milestones are identified for various initiatives, such as commitments from multilateral development banks and the adoption of new strategies at international forums like COP28.",
+      "entities": {
+        "authors": [
+          "Working group on the development of innovative solutions to provide additional resources to support countries vulnerable to climate change (WG4)"
+        ],
+        "intended_recipients": [
+          "countries vulnerable to climate change"
+        ],
+        "organizations": [
+          "MDBs",
+          "major official bilateral",
+          "International Development Finance Club",
+          "private creditors",
+          "IMF",
+          "WB",
+          "IMO",
+          "OECD",
+          "IMF",
+          "UN agencies",
+          "International Financial Institutions (IFIs)",
+          "G20",
+          "multilateral",
+          "regional",
+          "national development banks"
+        ]
+      },
+      "key_phrases": [
+        "innovative solutions",
+        "additional resources",
+        "climate change",
+        "debt burden",
+        "climate-resilient debt clauses (CRDC)",
+        "mobilise additional financing",
+        "GHG emissions",
+        "climate vulnerabilities",
+        "financing needs",
+        "economic contributions",
+        "carbon markets",
+        "carbon pricing",
+        "Paris Agreement",
+        "debt swaps",
+        "SDG financing"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Paris_Peace_Forum_Documents/2024/20240214 - Implication du FPP dans les suites du processus de Pall Mall Process.docx",
+      "tags": [
+        "cybersecurity",
+        "international cooperation",
+        "cyber intrusion",
+        "arms control"
+      ],
+      "summary": "The Pall Mall Process, launched by France and the UK at the Lancaster House conference, aims to combat the proliferation and irresponsible use of commercially available cyber intrusion capabilities.  Building on discussions from the 2023 Paris Peace Forum and the Paris Call for Trust and Security in Cyberspace, the process seeks to prevent the proliferation of malicious software and harmful cyber practices.  The next Paris Peace Forum will host the next plenary meeting of the Pall Mall Process.  The process emphasizes the importance of formulating concrete normative proposals, leveraging the existing framework and secretariat of the Paris Call to maintain momentum and integrate diverse stakeholders' input into intergovernmental discussions.",
+      "entities": {
+        "authors": [],
+        "intended_recipients": [],
+        "organizations": [
+          "France",
+          "Royaume-Uni"
+        ]
+      },
+      "key_phrases": [
+        "Pall Mall Process",
+        "Forum de Paris sur la Paix",
+        "prolif\u00e9ration",
+        "usage irresponsable des capacit\u00e9s d\u2019intrusion cyber",
+        "Appel de Paris",
+        "non-prolif\u00e9ration",
+        "cyber-mercenaires",
+        "code de conduite"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Paris_Peace_Forum_Documents/2024/Memo_Squaring the Circle_Sep 7 revFR.docx",
+      "tags": [
+        "cybersecurity",
+        "national security",
+        "international cooperation",
+        "export controls",
+        "spyware"
+      ],
+      "summary": "Taking Stock: Multistakeholder Convening at the 2023 Paris Peace Forum focusing on tackling the cyber, spyware misuse and proliferation. The document reviews the evolution of government concerns and actions, including export controls, and the role of civil society research. It highlights the need for continued international cooperation and action plans.  Carnegie proposes a half-day event at the Paris Peace Forum to convene key actors.",
+      "entities": {
+        "authors": [
+          "Carnegie"
+        ],
+        "intended_recipients": [
+          "governments",
+          "industry",
+          "civil society"
+        ],
+        "organizations": [
+          "Carnegie",
+          "Paris Peace Forum",
+          "U.S. Office of the Director of National Intelligence",
+          "Wassenaar Arrangement",
+          "UK National Cyber Security Centre",
+          "The New York Times",
+          "France"
+        ]
+      },
+      "key_phrases": [
+        "cyber tools",
+        "spyware",
+        "export controls",
+        "national security",
+        "cyber proliferation",
+        "multistakeholder convening",
+        "Paris Peace Forum"
+      ],
+      "sentiment": "neutral",
+      "document_form": "report",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Paris_Peace_Forum_Documents/2024/PPF_PAN Roundtable on global health and pandemic preparedness.pdf",
+      "tags": [],
+      "summary": "No summary available.",
+      "entities": {},
+      "key_phrases": [],
+      "sentiment": "neutral",
+      "document_form": "",
+      "document_purpose": ""
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Travel_&_Expenses/Invoices/Invoice Grand Bay Hotel.pdf",
+      "tags": [
+        "hotel",
+        "invoice",
+        "travel"
+      ],
+      "summary": "Invoice for Grand Bay Hotel San Francisco.  Details charges for room occupancy, taxes, and fees.",
+      "entities": {
+        "authors": [
+          "Abecassis, Adrien"
+        ],
+        "intended_recipients": [],
+        "organizations": [
+          "Grand Bay Hotel San Francisco"
+        ]
+      },
+      "key_phrases": [
+        "Invoice",
+        "Arrival Date",
+        "Departure Date",
+        "Room Number",
+        "Confirmation Number",
+        "Invoice Currency",
+        "Date of Charge",
+        "Charge Description",
+        "Charge Amount",
+        "Credit Amount",
+        "Total Charge",
+        "Total Credits",
+        "Net Amount",
+        "Balance",
+        "TMD Fee",
+        "Room Occupancy Tax",
+        "California Tourism Fees",
+        "Rooms"
+      ],
+      "sentiment": "neutral",
+      "document_form": "invoice",
+      "document_purpose": "informative"
+    },
+    {
+      "filepath": "/mnt/c/Users/aabec/OneDrive - Paris Peace Forum/Pi\u00e8ces jointes/Travel_&_Expenses/Tickets/Flight ticket SFO.pdf",
+      "tags": [],
+      "summary": "No summary available.",
+      "entities": {
+        "authors": [],
+        "intended_recipients": [],
+        "organizations": [],
+        "locations": [],
+        "dates": []
+      },
+      "key_phrases": [],
+      "sentiment": "neutral",
+      "document_form": "",
+      "document_purpose": ""
+    }
+  ]
+}
