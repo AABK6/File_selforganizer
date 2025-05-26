@@ -2,4 +2,4 @@ python-docx
 PyPDF2
 tqdm
 jsonschema
-google-genai
+google-generativeai
