@@ -182,8 +182,10 @@ nomenclature_generation_config = {
     "temperature": 0.8,
     "top_p": 0.9,
     "max_output_tokens": nomenclature_max_tokens,
-    "thinking_config": types.ThinkingConfig(include_thoughts=True),
+    "thinking_config": types.ThinkingConfig(include_thoughts=True), # This is correct for the client.models.generate_content call
     "response_mime_type": "application/json",
+    # Note: When using generate_content_stream, this entire dict will be passed
+    # to the 'config' parameter.
 }
 
 
@@ -412,9 +414,37 @@ class LLMClient:
                 model='gemini-2.5-flash-preview-05-20',
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    **self.nomenclature_config
-                text = re.sub(r"^```(?:json)?", "", text)
-                text = text.rstrip("`")
+                    **self.nomenclature_generation_config
+                ),
+                stream=True
+            )
+
+            # Process the streamed response parts
+            for chunk in stream:
+                if chunk.parts:
+                    for part in chunk.parts:
+                        if hasattr(part, 'thought') and part.thought:
+                            # This is a reasoning token/thought
+                            print(Fore.GREEN + "💡 " + Style.RESET_ALL + part.text, end="") # Print reasoning with color
+                        else:
+                            # This is a content token (should be the JSON)
+                            response_text += part.text
+
+            print(Fore.CYAN + "\n--- End of Reasoning ---" + Style.RESET_ALL)
+
+        except genai.errors.APIError as e:
+            logger.error(f"LLM API error during structure proposal: {e}")
+            return {"Misc": [item["filepath"] for item in analysis_results]}
+        except Exception as e:
+            logger.error(f"Unexpected error during structure proposal: {e}")
+            return {"Misc": [item["filepath"] for item in analysis_results]}
+
+        # After streaming, parse the assembled content text as JSON
+        if response_text:
+            try:
+                json_string = response_text.strip()
+                # Attempt to clean potential markdown code blocks if present
+                if json_string.startswith("
             try:
                 return json.loads(text)
             except Exception:
