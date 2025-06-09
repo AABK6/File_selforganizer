@@ -13,7 +13,7 @@ import jsonschema
 from jsonschema import validate
 
 # External dependencies:
-#   google-generativeai (LLM)
+#   google-genai (LLM)
 #   docx
 #   PyPDF2
 
@@ -21,7 +21,7 @@ try:
     from google import genai
     from google.genai import types
 except ImportError:
-    print("google-generativeai not found. Please install it.")
+    print("google-genai not found. Please install it.")
     sys.exit(1)
 
 try:
@@ -78,9 +78,9 @@ nomenclature_max_tokens = config.get("nomenclature_max_tokens", 8192)
 # LLM Initialization
 ########################################################################
 
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 if not api_key:
-    logger.error("GEMINI_API_KEY not set. Exiting.")
+    logger.error("GOOGLE_API_KEY not set. Exiting.")
     sys.exit(1)
 
 # Only run this block for Google AI API
@@ -305,7 +305,7 @@ class LLMClient:
     
         full_prompt = prompt + text
         response = client.models.generate_content(
-            model='gemini-1.5-flash-8b',
+            model='gemini-1.5-flash',
             contents=full_prompt,
             config=types.GenerateContentConfig(
                 **self.analysis_config
@@ -360,7 +360,7 @@ class LLMClient:
         )
 
         response = client.models.generate_content(
-          model='gemini-1.5-flash-8b',
+          model='gemini-1.5-flash',
            contents=prompt,
           config=types.GenerateContentConfig(
                 **self.nomenclature_config

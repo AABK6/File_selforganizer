@@ -17,25 +17,25 @@ This Python script organizes files in a directory (including subdirectories) usi
 
 *   Python 3.7 or higher.
 *   A Google Cloud project with the Gemini API enabled.
-*   The `google-generativeai` library, `python-docx`, `PyPDF2`, `tqdm`, `uuid`, `hashlib`, and `argparse` libraries.
+*   The `google-genai` library, `python-docx`, `PyPDF2`, `tqdm`, and `jsonschema` libraries.
 
 ## Setup
 
 1.  **Install Required Libraries:**
 
     ```bash
-    pip install google-generativeai python-docx PyPDF2 tqdm uuid hashlib argparse
+    pip install google-genai python-docx PyPDF2 tqdm jsonschema
     ```
 
-2.  **Set the Gemini API Key:**
+2.  **Set the Google API Key for Gemini:**
 
-    Set your `GEMINI_API_KEY` environment variable:
+    Set your `GOOGLE_API_KEY` environment variable:
 
     ```bash
-    export GEMINI_API_KEY="YOUR_API_KEY"
+    export GOOGLE_API_KEY="YOUR_API_KEY"
     ```
 
-    Replace `YOUR_API_KEY` with your actual Gemini API key.
+    Replace `YOUR_API_KEY` with your actual Google API key.
 
 3.  **Create a `config.json` (Optional):**
 
