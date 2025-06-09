@@ -7,7 +7,6 @@ import docx
 import PyPDF2
 from onnx_llm_client import ONNXLLMClient, DEFAULT_MODEL_DIR
 
-
 def read_txt(path: Path) -> str:
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read()
