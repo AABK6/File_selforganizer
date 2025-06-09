@@ -35,8 +35,8 @@ class LLMClient:
         if not self.api_key:
             raise ValueError("Environment variable GOOGLE_API_KEY is not set.")
         self.client = client
-        self.analysis_model = 'gemini-1.5-flash'
-        self.nomenclature_model = 'gemini-1.5-flash'
+        self.analysis_model = 'gemini-2.0-flash'
+        self.nomenclature_model = 'gemini-2.5-flash-preview-05-20'
 
     def _generate_with_retry(self, model, contents, generation_config, max_retries=3):
         """Generates text with exponential backoff retry mechanism."""

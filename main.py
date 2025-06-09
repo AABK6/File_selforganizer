@@ -305,7 +305,7 @@ class LLMClient:
     
         full_prompt = prompt + text
         response = client.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.0-flash',
             contents=full_prompt,
             config=types.GenerateContentConfig(
                 **self.analysis_config
@@ -360,7 +360,7 @@ class LLMClient:
         )
 
         response = client.models.generate_content(
-          model='gemini-1.5-flash',
+          model='gemini-2.5-flash-preview-05-20',
            contents=prompt,
           config=types.GenerateContentConfig(
                 **self.nomenclature_config
