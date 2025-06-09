@@ -5,8 +5,7 @@ from pathlib import Path
 import subprocess
 import docx
 import PyPDF2
-from onnx_llm_client import ONNXLLMClient
-
+from onnx_llm_client import ONNXLLMClient, DEFAULT_MODEL_DIR
 
 def read_txt(path: Path) -> str:
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -57,7 +56,12 @@ def read_file(path: Path) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Local file organizer using ONNX LLM")
     parser.add_argument("input_dir", type=Path)
-    parser.add_argument("--model_dir", required=True, type=Path, help="Path to ONNX model")
+    parser.add_argument(
+        "--model_dir",
+        type=Path,
+        default=Path(DEFAULT_MODEL_DIR),
+        help="Path to ONNX model (defaults to AI Toolkit location)"
+    )
     args = parser.parse_args()
 
     client = ONNXLLMClient(str(args.model_dir))

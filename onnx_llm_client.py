@@ -3,13 +3,31 @@ import json
 import onnxruntime_genai as og
 from transformers import AutoTokenizer
 
+# Default model directory used on Copilot+ PCs with the AI Toolkit
+DEFAULT_MODEL_DIR = r"C:\Users\aabec\.aitk\models\DeepSeek\qnn-deepseek-r1-distill-qwen-7b"
+
 class ONNXLLMClient:
-    def __init__(self, model_dir: str):
+    def __init__(self, model_dir: str = DEFAULT_MODEL_DIR):
+        """Load the tokenizer and model from ``model_dir``.
+
+        If ``model_dir`` is ``None`` it defaults to ``DEFAULT_MODEL_DIR``.
+        When the installed build of ``onnxruntime-genai`` does not support the
+        QNN execution provider, the constructor falls back to CPU by setting the
+        ``ORT_DISABLE_QNN`` environment variable and reloading the model.
+        """
+        model_dir = model_dir or DEFAULT_MODEL_DIR
         if not os.path.isdir(model_dir):
             raise FileNotFoundError(f"Model directory not found: {model_dir}")
         self.model_dir = model_dir
         self.tokenizer = AutoTokenizer.from_pretrained(model_dir, trust_remote_code=True)
-        self.model = og.Model(model_dir)
+        try:
+            self.model = og.Model(model_dir)
+        except RuntimeError as e:
+            if "QNN execution provider is not supported" in str(e):
+                os.environ["ORT_DISABLE_QNN"] = "1"
+                self.model = og.Model(model_dir)
+            else:
+                raise
 
     def _generate(self, prompt: str, max_tokens: int = 1024) -> str:
         params = og.GeneratorParams(self.model)

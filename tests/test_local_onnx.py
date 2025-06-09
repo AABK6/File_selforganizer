@@ -58,6 +58,30 @@ def test_read_doc_no_antiword(monkeypatch):
     assert local_main.read_doc(Path("a.doc")) == ""
 
 
+def test_model_fallback(monkeypatch, tmp_path):
+    calls = []
+
+    def first_call(path):
+        calls.append(path)
+        raise RuntimeError("QNN execution provider is not supported in this build.")
+
+    def second_call(path):
+        calls.append(path)
+        return object()
+
+    model_calls = [first_call, second_call]
+
+    def fake_model(path):
+        return model_calls.pop(0)(path)
+
+    monkeypatch.setattr(onnx_llm_client, "og", types.SimpleNamespace(Model=fake_model, GeneratorParams=object, Generator=object))
+    monkeypatch.setattr(onnx_llm_client, "AutoTokenizer", types.SimpleNamespace(from_pretrained=lambda *a, **k: types.SimpleNamespace(encode=lambda x: [], decode=lambda x: "")))
+
+    client = onnx_llm_client.ONNXLLMClient(str(tmp_path))
+    assert calls == [str(tmp_path), str(tmp_path)]
+    assert os.environ.get("ORT_DISABLE_QNN") == "1"
+
+
 def test_read_file_dispatch(tmp_path, monkeypatch):
     txt = tmp_path / "a.txt"
     txt.write_text("hi")
