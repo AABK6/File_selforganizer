@@ -405,33 +405,25 @@ class LLMClient:
             "or nested objects for subfolders."
         )
 
-        logger.info(f"Sending to LLM (nomenclature):\n{prompt}")
+        logger.info(f"Sending to LLM (nomenclature) with a request for reasoning.")
 
         response_text = ""
         try:
-            # Use generate_content_stream to get reasoning and final output
             stream = self.client.models.generate_content_stream(
                 model='gemini-2.5-flash-preview-05-20',
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    **self.nomenclature_generation_config
-                ),
-                stream=True
+                generation_config=types.GenerationConfig(**self.nomenclature_config)
             )
 
-            # Process the streamed response parts
+            print(Fore.CYAN + "\nLLM Reasoning Process:" + Style.RESET_ALL)
             for chunk in stream:
-                if chunk.parts:
-                    for part in chunk.parts:
-                        if hasattr(part, 'thought') and part.thought:
-                            # This is a reasoning token/thought
-                            print(Fore.GREEN + "💡 " + Style.RESET_ALL + part.text, end="") # Print reasoning with color
-                        else:
-                            # This is a content token (should be the JSON)
-                            response_text += part.text
-
+                for part in chunk.parts:
+                    if hasattr(part, 'thought') and part.thought:
+                        print(part.text, end="")
+                    else:
+                        response_text += part.text
             print(Fore.CYAN + "\n--- End of Reasoning ---" + Style.RESET_ALL)
-
+            
         except genai.errors.APIError as e:
             logger.error(f"LLM API error during structure proposal: {e}")
             return {"Misc": [item["filepath"] for item in analysis_results]}
@@ -439,18 +431,21 @@ class LLMClient:
             logger.error(f"Unexpected error during structure proposal: {e}")
             return {"Misc": [item["filepath"] for item in analysis_results]}
 
-        # After streaming, parse the assembled content text as JSON
         if response_text:
             try:
                 json_string = response_text.strip()
-                # Attempt to clean potential markdown code blocks if present
-                if json_string.startswith("
-            try:
-                return json.loads(text)
-            except Exception:
+                if json_string.startswith("```json"):
+                    json_string = json_string[len("```json"):].strip()
+                if json_string.endswith("```"):
+                    json_string = json_string[:-len("```")].strip()
+                
+                return json.loads(json_string)
+            except json.JSONDecodeError:
                 logger.error("Error parsing JSON from LLM for nomenclature proposal.")
+                logger.error(f"Received text was: {response_text}")
         else:
-            logger.error("No response from LLM for nomenclature proposal.")
+            logger.error("No final content response from LLM for nomenclature proposal.")
+            
         return {"Misc": [item["filepath"] for item in analysis_results]}
 
 
