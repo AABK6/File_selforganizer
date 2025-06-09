@@ -44,14 +44,18 @@ except ImportError:
 # Logging
 ########################################################################
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("organizer.log"),
+        logging.FileHandler("organizer.log", encoding="utf-8"),
         logging.StreamHandler(sys.stdout)
     ]
 )
+logging.getLogger("google").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 colorama_init()
 
