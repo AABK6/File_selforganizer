@@ -182,6 +182,7 @@ nomenclature_generation_config = {
     "temperature": 0.8,
     "top_p": 0.9,
     "max_output_tokens": nomenclature_max_tokens,
+    "thinking_config": types.ThinkingConfig(include_thoughts=True),
     "response_mime_type": "application/json",
 }
 
@@ -388,40 +389,30 @@ class LLMClient:
 
     def propose_structure(self, analysis_results: list[dict], user_feedback: str) -> dict:
         """Propose a folder structure using the nomenclature model."""
-        # Reworked prompt: instruct the model to reason about flat vs hierarchical
-        # and consider user feedback. No commentary, just return JSON.
+        # Prompt for the nomenclature model. With ThinkingConfig enabled, the model
+        # will provide its reasoning as 'thought' parts before the main response.
         prompt = (
             "You have a list of files with detailed metadata including tags, summary, entities, key phrases, sentiment, document form, and document purpose. "
             "Your job: reorganize the files based on their content and propose a neat and logical folder structure. "
             "Group files by their thematic similarities, key phrases, and as a possible second layer on document form/purpose. "
             "You may use a flat structure or a hierarchical folder structure. If some groups are subsets of others, create nested folders. If not, keep it simpler. "
-            "Consider this user feedback to improve your proposal:\n"
-            f"{user_feedback}\n\n"
+            f"Consider this user feedback to improve your proposal:\\n{user_feedback}\\n\\n"
             "The files are:\n\n"
             + json.dumps(analysis_results, indent=2) + "\n\n"
             "Return only a JSON object: folder names as keys, and values either arrays of file paths "
-            "or nested objects for subfolders. No extra text."
+            "or nested objects for subfolders."
         )
 
         logger.info(f"Sending to LLM (nomenclature):\n{prompt}")
+
+        response_text = ""
         try:
-            response = self.client.models.generate_content(
+            # Use generate_content_stream to get reasoning and final output
+            stream = self.client.models.generate_content_stream(
                 model='gemini-2.5-flash-preview-05-20',
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     **self.nomenclature_config
-                )
-            )
-        except genai.errors.APIError as e:
-            logger.error(f"LLM API error during structure proposal: {e}")
-            return {"Misc": [item["filepath"] for item in analysis_results]}
-        except Exception as e:
-            logger.error(f"Unexpected error during structure proposal: {e}")
-            return {"Misc": [item["filepath"] for item in analysis_results]}
-        logger.info(f"Received from LLM (nomenclature):\n{response.text}")
-        if response and response.text:
-            text = response.text.strip()
-            if text.startswith("```"):
                 text = re.sub(r"^```(?:json)?", "", text)
                 text = text.rstrip("`")
             try:
