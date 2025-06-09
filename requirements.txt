@@ -6,3 +6,4 @@ google-genai
 onnxruntime-genai
 transformers
 pytest
+colorama

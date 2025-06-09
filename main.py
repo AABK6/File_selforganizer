@@ -7,10 +7,12 @@ import uuid
 import hashlib
 import logging
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
 from tqdm import tqdm
 import jsonschema
 from jsonschema import validate
+from colorama import Fore, Style, init as colorama_init
 
 # External dependencies:
 #   google-genai (LLM)
@@ -49,30 +51,51 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+colorama_init()
 
 
 ########################################################################
 # Configuration
 ########################################################################
 
-def load_config(config_path="config.json"):
+
+@dataclass
+class OrganizerConfig:
+    supported_extensions: tuple[str, ...] = (
+        '.txt', '.md', '.doc', '.docx', '.pdf'
+    )
+    analysis_max_tokens: int = 8192
+    nomenclature_max_tokens: int = 8192
+
+
+def load_config(config_path: str = "config.json") -> OrganizerConfig:
     """Load configuration from JSON file or use defaults if not found."""
     try:
         with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            return OrganizerConfig(
+                supported_extensions=tuple(data.get(
+                    "supported_extensions",
+                    OrganizerConfig.supported_extensions,
+                )),
+                analysis_max_tokens=data.get(
+                    "analysis_max_tokens",
+                    OrganizerConfig.analysis_max_tokens,
+                ),
+                nomenclature_max_tokens=data.get(
+                    "nomenclature_max_tokens",
+                    OrganizerConfig.nomenclature_max_tokens,
+                ),
+            )
     except FileNotFoundError:
         logger.info("Config file not found. Using defaults.")
-        return {
-            "supported_extensions": ['.txt', '.md', '.doc', '.docx', '.pdf'],
-            "analysis_max_tokens": 8192,
-            "nomenclature_max_tokens": 8192,
-        }
+        return OrganizerConfig()
 
 
 config = load_config()
-supported_ext = tuple(config.get("supported_extensions", ['.txt', '.md', '.doc', '.docx', '.pdf']))
-analysis_max_tokens = config.get("analysis_max_tokens", 8192)
-nomenclature_max_tokens = config.get("nomenclature_max_tokens", 8192)
+supported_ext = config.supported_extensions
+analysis_max_tokens = config.analysis_max_tokens
+nomenclature_max_tokens = config.nomenclature_max_tokens
 
 ########################################################################
 # LLM Initialization
@@ -451,22 +474,20 @@ class FileAnalyzer:
 # File Organization
 ########################################################################
 
-def organize_files(chosen_structure: dict, output_dir: str) -> None:
+def organize_files(chosen_structure: dict, output_dir: str, *, dry_run: bool = False) -> None:
     """Recursively create folders and move files according to the proposed structure."""
     for theme, content_ in chosen_structure.items():
         theme_dir = Path(output_dir) / Path(theme.strip().replace(" ", "_"))
         theme_dir.mkdir(parents=True, exist_ok=True)
         if isinstance(content_, list):
-            # This folder holds files directly
-            for f in content_:
+            for f in tqdm(content_, desc=f"{theme_dir}"):
                 src = Path(f)
-                if src.exists():
+                if src.exists() and not dry_run:
                     shutil.move(str(src), str(theme_dir / src.name))
-                else:
+                elif not src.exists():
                     logger.warning(f"{f} does not exist.")
         elif isinstance(content_, dict):
-            # Nested folders
-            organize_files(content_, str(theme_dir))
+            organize_files(content_, str(theme_dir), dry_run=dry_run)
         else:
             logger.warning(f"Unexpected structure type for {theme}")
 
@@ -487,15 +508,29 @@ def format_structure_output(structure: dict, indent=0) -> str:
                  output += "  " * (indent+1) + f"  - {item}\n"
     return output
 
-def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: list[dict], output_dir: str):
-    """Loop until user approves structure or quits. On 'c', get user feedback and re-propose."""
+def gather_user_feedback_and_improve(
+    llm_client: LLMClient,
+    analysis_results: list[dict],
+    output_dir: str,
+    *,
+    auto_approve: bool = False,
+    dry_run: bool = False,
+):
+    """Loop until user approves structure or quits."""
     user_feedback = ""
     while True:
         proposed_structure = llm_client.propose_structure(analysis_results, user_feedback)
         logger.info("Proposed structure:")
         formatted_structure = format_structure_output(proposed_structure)
-        print("\nProposed structure:\n")
+        print(Fore.CYAN + "\nProposed structure:\n" + Style.RESET_ALL)
         print(formatted_structure)
+
+        if auto_approve:
+            if not dry_run:
+                organize_files(proposed_structure, output_dir, dry_run=dry_run)
+            generate_report(analysis_results, output_dir)
+            logger.info("Files organized.")
+            break
 
         # Aggregate and display key metadata for user awareness
         all_authors = set(author for item in analysis_results for author in item.get("entities", {}).get("authors", []))
@@ -514,7 +549,7 @@ def gather_user_feedback_and_improve(llm_client: LLMClient, analysis_results: li
         choice = input("Approve (a), Reject (r), or Comment (c)? ").strip().lower()
         if choice == 'a':
             # Approved
-            organize_files(proposed_structure, output_dir)
+            organize_files(proposed_structure, output_dir, dry_run=dry_run)
             generate_report(analysis_results, output_dir)
             logger.info("Files organized.")
             break
@@ -557,40 +592,105 @@ def generate_report(analysis_results: list[dict], output_dir: str):
 # Main Execution Flow
 ########################################################################
 
-def main():
-    # Parse arguments
-    parser = argparse.ArgumentParser(description="Organize files using LLM.")
-    parser.add_argument("input_dir", type=str, help="Path to input directory.")
-    parser.add_argument("--output_dir", type=str, help="Path to output directory.")
-    parser.add_argument("--force_reanalyze", action="store_true", help="Force re-analysis of all files.")
-    args = parser.parse_args()
-
-    # Validate input directory
-    input_dir = args.input_dir
+def run_organizer(
+    input_dir: str,
+    output_dir: str | None = None,
+    *,
+    force_reanalyze: bool = False,
+    auto_approve: bool = False,
+    dry_run: bool = False,
+) -> None:
+    """Run the full organization pipeline."""
     if not os.path.exists(input_dir):
         logger.error(f"Input path {input_dir} does not exist.")
-        sys.exit(1)
+        return
 
-    # Set output directory
-    output_dir = args.output_dir
-    if not output_dir:
-        output_dir = os.path.join(os.path.dirname(input_dir), 'organized_folder')
+    output_dir = output_dir or os.path.join(os.path.dirname(input_dir), "organized_folder")
     logger.info(f"Output path: {output_dir}")
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    Path(output_dir).mkdir(parents=True, exist_ok=True) # Ensure output directory is made
-
-    # Initialize LLM client and file analyzer
     llm_client = LLMClient(analysis_generation_config, nomenclature_generation_config)
-    analyzer = FileAnalyzer(llm_client, args.force_reanalyze)
+    analyzer = FileAnalyzer(llm_client, force_reanalyze)
 
-    # Analyze all files
     analysis_results = analyzer.process_directory(input_dir)
     if not analysis_results:
         logger.info("No supported files found.")
         return
 
-    # Prompt user to approve structure, reject, or provide feedback for refinement
-    gather_user_feedback_and_improve(llm_client, analysis_results, output_dir)
+    gather_user_feedback_and_improve(
+        llm_client,
+        analysis_results,
+        output_dir,
+        auto_approve=auto_approve,
+        dry_run=dry_run,
+    )
+
+
+def clear_cache() -> None:
+    """Delete the analysis cache file if it exists."""
+    path = Path(STORAGE_FILE)
+    if path.exists():
+        path.unlink()
+        print("Cache cleared.")
+    else:
+        print("No cache file found.")
+
+
+def interactive_menu() -> None:
+    """Simple text-based menu for common tasks."""
+    while True:
+        print(Fore.YELLOW + "\nFile Organizer Menu" + Style.RESET_ALL)
+        print("1. Organize a directory")
+        print("2. Clear analysis cache")
+        print("3. Exit")
+        choice = input("Select an option: ").strip()
+        if choice == "1":
+            input_dir = input("Input directory: ").strip()
+            output_dir = input(
+                "Output directory (blank for default): "
+            ).strip() or None
+            auto = input("Auto approve? [y/N]: ").strip().lower() == "y"
+            dry = input("Dry run? [y/N]: ").strip().lower() == "y"
+            run_organizer(
+                input_dir,
+                output_dir,
+                auto_approve=auto,
+                dry_run=dry,
+            )
+        elif choice == "2":
+            clear_cache()
+        elif choice == "3":
+            break
+        else:
+            print("Invalid choice. Try again.")
+
+
+########################################################################
+# Main Execution Flow
+########################################################################
+
+def main():
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Organize files using LLM.")
+    parser.add_argument("input_dir", nargs="?", help="Path to input directory.")
+    parser.add_argument("--output_dir", type=str, help="Path to output directory.")
+    parser.add_argument("--force_reanalyze", action="store_true", help="Force re-analysis of all files.")
+    parser.add_argument("--auto_approve", action="store_true", help="Skip prompts and apply the first proposed structure.")
+    parser.add_argument("--dry_run", action="store_true", help="Show proposed structure without moving files.")
+    parser.add_argument("--menu", action="store_true", help="Launch interactive menu.")
+    args = parser.parse_args()
+
+    if args.menu or not args.input_dir:
+        interactive_menu()
+        return
+
+    run_organizer(
+        args.input_dir,
+        args.output_dir,
+        force_reanalyze=args.force_reanalyze,
+        auto_approve=args.auto_approve,
+        dry_run=args.dry_run,
+    )
 
 
 
