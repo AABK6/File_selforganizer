@@ -43,9 +43,8 @@ except ImportError:
 ########################################################################
 # Logging
 ########################################################################
-
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stdout, 'reconfigure'):
+ sys.stdout.reconfigure(encoding='utf-8')
 
 logging.basicConfig(
     level=logging.INFO,
@@ -404,6 +403,7 @@ class LLMClient:
             "or nested objects for subfolders. No extra text."
         )
 
+        logger.info(f"Sending to LLM (nomenclature):\n{prompt}")
         try:
             response = self.client.models.generate_content(
                 model='gemini-2.5-flash-preview-05-20',
@@ -418,6 +418,7 @@ class LLMClient:
         except Exception as e:
             logger.error(f"Unexpected error during structure proposal: {e}")
             return {"Misc": [item["filepath"] for item in analysis_results]}
+        logger.info(f"Received from LLM (nomenclature):\n{response.text}")
         if response and response.text:
             text = response.text.strip()
             if text.startswith("```"):
