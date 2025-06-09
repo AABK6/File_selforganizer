@@ -3,3 +3,5 @@ PyPDF2
 tqdm
 jsonschema
 google-genai
+onnxruntime-genai
+transformers
