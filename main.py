@@ -7,6 +7,8 @@ import uuid
 import hashlib
 import logging
 import argparse
+import time
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from tqdm import tqdm
@@ -120,9 +122,6 @@ if not api_key:
     logger.error("GOOGLE_API_KEY not set. Exiting.")
     sys.exit(1)
 
-# Only run this block for Google AI API
-client = genai.Client(api_key=api_key)
-
 analysis_response_schema = {
     "type": "object",
     "properties": {
@@ -207,10 +206,14 @@ def get_cached_analysis(file_hash: str) -> dict:
     storage = load_storage()
     return storage["files"].get(file_hash)
 
-def save_analysis(file_hash: str, analysis: dict) -> None:
-    """Save analysis to cache."""
+def save_analysis(file_hash: str, analysis: dict, filepath: str) -> None:
+    """Save analysis to cache along with metadata."""
     storage = load_storage()
-    storage["files"][file_hash] = {"analysis": analysis}
+    storage["files"][file_hash] = {
+        "analysis": analysis,
+        "filepath": filepath,
+        "timestamp": time.time(),
+    }
     save_storage(storage)
 
 def save_nomenclature_comment(proposed_structure: dict, comment: str):
@@ -311,9 +314,13 @@ def get_file_hash(filepath: str) -> str:
 
 class LLMClient:
     """A simple client for interacting with the LLM models."""
-    def __init__(self, analysis_config, nomenclature_config):
+    def __init__(self, analysis_config, nomenclature_config, api_key: str | None = None):
         self.analysis_config = analysis_config
         self.nomenclature_config = nomenclature_config
+        api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY not set")
+        self.client = genai.Client(api_key=api_key)
     
     def analyze_text(self, text: str) -> dict:
         """Analyze a text using the analysis model."""
@@ -342,7 +349,7 @@ class LLMClient:
     
         full_prompt = prompt + text
         try:
-            response = client.models.generate_content(
+            response = self.client.models.generate_content(
                 model='gemini-2.0-flash',
                 contents=full_prompt,
                 config=types.GenerateContentConfig(
@@ -358,24 +365,22 @@ class LLMClient:
 
         if response and response.text:
             try:
-                # Attempt JSON normalization
                 json_string = response.text.strip()
-                json_string = json_string.replace('\\', '\\\\')  # Escape backslashes
-                json_string = json_string.replace('\n', '')  # Remove newlines
-                json_string = json_string.replace('\'', '"')  # Replace single quotes
-
-                # Attempt JSON parsing
-                result = json.loads(json_string)
-                 # Validate the response against the updated schema
+                if json_string.startswith("```"):
+                    json_string = re.sub(r"^```(?:json)?", "", json_string)
+                    json_string = json_string.rstrip("`")
+                try:
+                    result = json.loads(json_string)
+                except json.JSONDecodeError:
+                    match = re.search(r"\{.*\}", json_string, re.DOTALL)
+                    if match:
+                        result = json.loads(match.group(0))
+                    else:
+                        raise
                 validate(instance=result, schema=analysis_response_schema)
-
                 return result
-            except json.JSONDecodeError as e:
-                logger.error(f"JSONDecodeError during LLM analysis: {e}")
-            except jsonschema.exceptions.ValidationError as e:
-                logger.error(f"ValidationError during LLM analysis: {e}")
             except Exception as e:
-                logger.error(f"General exception during LLM analysis: {e}")
+                logger.error(f"Failed parsing LLM analysis JSON: {e}")
         return EMPTY_ANALYSIS_RESULT
 
     def propose_structure(self, analysis_results: list[dict], user_feedback: str) -> dict:
@@ -396,7 +401,7 @@ class LLMClient:
         )
 
         try:
-            response = client.models.generate_content(
+            response = self.client.models.generate_content(
                 model='gemini-2.5-flash-preview-05-20',
                 contents=prompt,
                 config=types.GenerateContentConfig(
@@ -410,9 +415,13 @@ class LLMClient:
             logger.error(f"Unexpected error during structure proposal: {e}")
             return {"Misc": [item["filepath"] for item in analysis_results]}
         if response and response.text:
+            text = response.text.strip()
+            if text.startswith("```"):
+                text = re.sub(r"^```(?:json)?", "", text)
+                text = text.rstrip("`")
             try:
-                return json.loads(response.text)
-            except ValueError:
+                return json.loads(text)
+            except Exception:
                 logger.error("Error parsing JSON from LLM for nomenclature proposal.")
         else:
             logger.error("No response from LLM for nomenclature proposal.")
@@ -448,6 +457,7 @@ class FileAnalyzer:
         if not text.strip():
             analysis = EMPTY_ANALYSIS_RESULT
         else:
+            logger.info(f"Sending {fpath} to LLM")
             analysis = self.llm_client.analyze_text(text)
 
         # Include the filepath in the analysis result
@@ -457,13 +467,13 @@ class FileAnalyzer:
         }
 
         # Save analysis for future use
-        save_analysis(current_hash, analysis)
+        save_analysis(current_hash, analysis, fpath)
         return combined_result
        
 
-    def process_directory(self, input_dir: str) -> list[dict]:
+    def process_directory(self, input_dir: str, exclude_dirs: set[str] | None = None) -> list[dict]:
         """Scan directory, process supported files, return analysis results."""
-        files = self.scan_directory(input_dir)
+        files = self.scan_directory(input_dir, exclude_dirs=exclude_dirs)
         analysis_results = []
         for fpath in tqdm(files, desc="Analyzing files"):
             analysis = self.process_file(fpath)
@@ -471,10 +481,13 @@ class FileAnalyzer:
         return analysis_results
 
     @staticmethod
-    def scan_directory(directory: str) -> list[str]:
-        """Return a list of supported files in a directory."""
+    def scan_directory(directory: str, *, exclude_dirs: set[str] | None = None) -> list[str]:
+        """Return a list of supported files in a directory, skipping excluded dirs."""
+        exclude_dirs = {os.path.abspath(p) for p in (exclude_dirs or set())}
         found = []
         for root, _, filenames in os.walk(directory):
+            if os.path.abspath(root) in exclude_dirs:
+                continue
             for filename in filenames:
                 if filename.lower().endswith(supported_ext):
                     found.append(str(Path(root) / filename))
@@ -488,13 +501,22 @@ class FileAnalyzer:
 def organize_files(chosen_structure: dict, output_dir: str, *, dry_run: bool = False) -> None:
     """Recursively create folders and move files according to the proposed structure."""
     for theme, content_ in chosen_structure.items():
-        theme_dir = Path(output_dir) / Path(theme.strip().replace(" ", "_"))
+        safe_theme = re.sub(r'[<>:"/\\|?*]', '_', theme.strip()).replace(' ', '_')
+        theme_dir = Path(output_dir) / Path(safe_theme)
         theme_dir.mkdir(parents=True, exist_ok=True)
         if isinstance(content_, list):
             for f in tqdm(content_, desc=f"{theme_dir}"):
                 src = Path(f)
                 if src.exists() and not dry_run:
-                    shutil.move(str(src), str(theme_dir / src.name))
+                    dest = theme_dir / src.name
+                    if dest.exists():
+                        base, ext = os.path.splitext(src.name)
+                        count = 1
+                        while dest.exists():
+                            dest = theme_dir / f"{base}_{count}{ext}"
+                            count += 1
+                        logger.warning(f"Name collision for {src}; renaming to {dest.name}")
+                    shutil.move(str(src), str(dest))
                 elif not src.exists():
                     logger.warning(f"{f} does not exist.")
         elif isinstance(content_, dict):
@@ -544,10 +566,22 @@ def gather_user_feedback_and_improve(
             break
 
         # Aggregate and display key metadata for user awareness
-        all_authors = set(author for item in analysis_results for author in item.get("entities", {}).get("authors", []))
-        all_recipients = set(recipient for item in analysis_results for recipient in item.get("entities", {}).get("intended_recipients", []))
-        all_key_phrases = set(phrase for item in analysis_results for phrase in item.get("key_phrases", []))
-        overall_sentiment = [item.get("sentiment", "neutral") for item in analysis_results]
+        all_authors = set(
+            author
+            for item in analysis_results
+            for author in item["analysis"].get("entities", {}).get("authors", [])
+        )
+        all_recipients = set(
+            recipient
+            for item in analysis_results
+            for recipient in item["analysis"].get("entities", {}).get("intended_recipients", [])
+        )
+        all_key_phrases = set(
+            phrase
+            for item in analysis_results
+            for phrase in item["analysis"].get("key_phrases", [])
+        )
+        overall_sentiment = [item["analysis"].get("sentiment", "neutral") for item in analysis_results]
         sentiment_counts = {}
         for sentiment in overall_sentiment:
             sentiment_counts[sentiment] = sentiment_counts.get(sentiment, 0) + 1
@@ -623,7 +657,7 @@ def run_organizer(
     llm_client = LLMClient(analysis_generation_config, nomenclature_generation_config)
     analyzer = FileAnalyzer(llm_client, force_reanalyze)
 
-    analysis_results = analyzer.process_directory(input_dir)
+    analysis_results = analyzer.process_directory(input_dir, exclude_dirs={output_dir})
     if not analysis_results:
         logger.info("No supported files found.")
         return
