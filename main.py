@@ -97,6 +97,20 @@ supported_ext = config.supported_extensions
 analysis_max_tokens = config.analysis_max_tokens
 nomenclature_max_tokens = config.nomenclature_max_tokens
 
+# Maximum number of characters from a file that will be sent to the LLM
+MAX_INPUT_CHARS = 100_000
+
+# Default analysis result returned when processing fails or no text is available
+EMPTY_ANALYSIS_RESULT = {
+    'tags': [],
+    'summary': 'No summary available.',
+    'entities': {},
+    'key_phrases': [],
+    'sentiment': 'neutral',
+    'document_form': '',
+    'document_purpose': ''
+}
+
 ########################################################################
 # LLM Initialization
 ########################################################################
@@ -327,13 +341,20 @@ class LLMClient:
         )
     
         full_prompt = prompt + text
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=full_prompt,
-            config=types.GenerateContentConfig(
-                **self.analysis_config
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    **self.analysis_config
+                )
             )
-        )
+        except genai.errors.APIError as e:
+            logger.error(f"LLM API error during analysis: {e}")
+            return EMPTY_ANALYSIS_RESULT
+        except Exception as e:
+            logger.error(f"Unexpected error during analysis: {e}")
+            return EMPTY_ANALYSIS_RESULT
 
         if response and response.text:
             try:
@@ -355,15 +376,7 @@ class LLMClient:
                 logger.error(f"ValidationError during LLM analysis: {e}")
             except Exception as e:
                 logger.error(f"General exception during LLM analysis: {e}")
-        return {
-            'tags': [],
-            'summary': 'No summary available.',
-            'entities': {},
-            'key_phrases': [],
-            'sentiment': 'neutral',
-            'document_form': '',
-            'document_purpose': ''
-        }
+        return EMPTY_ANALYSIS_RESULT
 
     def propose_structure(self, analysis_results: list[dict], user_feedback: str) -> dict:
         """Propose a folder structure using the nomenclature model."""
@@ -382,13 +395,20 @@ class LLMClient:
             "or nested objects for subfolders. No extra text."
         )
 
-        response = client.models.generate_content(
-          model='gemini-2.5-flash-preview-05-20',
-           contents=prompt,
-          config=types.GenerateContentConfig(
-                **self.nomenclature_config
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.5-flash-preview-05-20',
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    **self.nomenclature_config
+                )
             )
-        )
+        except genai.errors.APIError as e:
+            logger.error(f"LLM API error during structure proposal: {e}")
+            return {"Misc": [item["filepath"] for item in analysis_results]}
+        except Exception as e:
+            logger.error(f"Unexpected error during structure proposal: {e}")
+            return {"Misc": [item["filepath"] for item in analysis_results]}
         if response and response.text:
             try:
                 return json.loads(response.text)
@@ -420,22 +440,13 @@ class FileAnalyzer:
 
         # Extract text and analyze via LLM
         text = extract_file_content(fpath)
+        if len(text) > MAX_INPUT_CHARS:
+            logger.warning(
+                f"Text from {fpath} exceeds {MAX_INPUT_CHARS} characters; trimming"
+            )
+            text = text[:MAX_INPUT_CHARS]
         if not text.strip():
-            analysis = {
-                'tags': [],
-                'summary': 'No summary available.',
-                'entities': {
-                    'authors': [],
-                    'intended_recipients': [],
-                    'organizations': [],
-                    'locations': [],
-                    'dates': []
-                },
-                'key_phrases': [],
-                'sentiment': 'neutral',
-                'document_form': '',
-                'document_purpose': ''
-            }
+            analysis = EMPTY_ANALYSIS_RESULT
         else:
             analysis = self.llm_client.analyze_text(text)
 
