@@ -31,9 +31,9 @@ analysis_response_schema = {
 
 class LLMClient:
     def __init__(self, client):
-        self.api_key = os.environ.get("GENAI_API_KEY")
+        self.api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
-            raise ValueError("Environment variable GENAI_API_KEY is not set.")
+            raise ValueError("Environment variable GOOGLE_API_KEY is not set.")
         self.client = client
         self.analysis_model = 'gemini-1.5-flash'
         self.nomenclature_model = 'gemini-1.5-flash'
