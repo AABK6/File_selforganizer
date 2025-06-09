@@ -117,6 +117,37 @@ The script currently supports:
 
 This list can be customized in the `config.json` file.
 
+## Running Locally with ONNX
+
+The organizer can run entirely offline using an ONNX model on a Copilot+ PC. A
+typical workflow is:
+
+1. **Download a model.** Many models are available in ONNX format on
+   [HuggingFace](https://huggingface.co). For example to download the DeepSeek
+   R1 distilled model you can run:
+
+   ```bash
+   huggingface-cli download onnxruntime/DeepSeek-R1-Distill-ONNX \
+     --include "deepseek-r1-distill-qwen-1.5B/*" --local-dir /path/to/model
+   ```
+
+2. **Install the required packages.** `onnxruntime-genai` provides the runtime
+   and will automatically use the QNN execution provider on supported hardware.
+
+   ```bash
+   pip install onnxruntime-genai transformers
+   ```
+
+3. **Run the script.** Pass the model directory and the folder you wish to
+   organize:
+
+   ```bash
+   python local_main.py <input_directory> --model_dir /path/to/model
+   ```
+
+The script detects the Neural Processing Unit through the QNN execution
+provider when available and falls back to CPU otherwise.
+
 ## Contributions
 
 Contributions are welcome! If you have any ideas for improvements, or find bugs, please feel free to open an issue or submit a pull request.
